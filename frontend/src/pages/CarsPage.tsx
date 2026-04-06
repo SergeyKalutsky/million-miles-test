@@ -12,14 +12,23 @@ interface Filters {
   body_type: string
   fuel_type: string
   transmission: string
+  color: string
   year_min: string
   year_max: string
   price_max: string
   sort: string
 }
 
+interface Facets {
+  brands: string[]
+  body_types: string[]
+  fuel_types: string[]
+  transmissions: string[]
+  colors: string[]
+}
+
 const INIT_FILTERS: Filters = {
-  brand: '', body_type: '', fuel_type: '', transmission: '',
+  brand: '', body_type: '', fuel_type: '', transmission: '', color: '',
   year_min: '', year_max: '', price_max: '', sort: 'created_at:desc',
 }
 
@@ -63,14 +72,31 @@ function CarCard({ car }: { car: Car }) {
   )
 }
 
+function FacetSelect({
+  label, value, options, onChange,
+}: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)} className="input-field">
+      <option value="">{label}</option>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  )
+}
+
 export default function CarsPage() {
   const { username, logout } = useAuth()
   const [filters, setFilters] = useState<Filters>(INIT_FILTERS)
   const [applied, setApplied] = useState<Filters>(INIT_FILTERS)
   const [page, setPage] = useState(1)
   const [data, setData] = useState<PaginatedCars | null>(null)
+  const [facets, setFacets] = useState<Facets>({ brands: [], body_types: [], fuel_types: [], transmissions: [], colors: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Load facets once on mount
+  useEffect(() => {
+    api.get<Facets>('/cars/facets').then(r => setFacets(r.data)).catch(() => {})
+  }, [])
 
   const fetchCars = useCallback(async (f: Filters, p: number) => {
     setLoading(true)
@@ -82,6 +108,7 @@ export default function CarsPage() {
       if (f.body_type) params.body_type = f.body_type
       if (f.fuel_type) params.fuel_type = f.fuel_type
       if (f.transmission) params.transmission = f.transmission
+      if (f.color) params.color = f.color
       if (f.year_min) params.year_min = f.year_min
       if (f.year_max) params.year_max = f.year_max
       if (f.price_max) params.price_max = f.price_max
@@ -101,7 +128,8 @@ export default function CarsPage() {
   function applyFilters() { setPage(1); setApplied({ ...filters }) }
   function resetFilters() { setFilters(INIT_FILTERS); setPage(1); setApplied(INIT_FILTERS) }
 
-  const set = (k: keyof Filters) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: keyof Filters) => (v: string) => setFilters(f => ({ ...f, [k]: v }))
+  const setEv = (k: keyof Filters) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setFilters(f => ({ ...f, [k]: e.target.value }))
 
   return (
@@ -112,30 +140,18 @@ export default function CarsPage() {
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <input placeholder="Brand" value={filters.brand} onChange={set('brand')}
+            <FacetSelect label="Brand"        value={filters.brand}        options={facets.brands}        onChange={set('brand')} />
+            <FacetSelect label="Body type"    value={filters.body_type}    options={facets.body_types}    onChange={set('body_type')} />
+            <FacetSelect label="Fuel type"    value={filters.fuel_type}    options={facets.fuel_types}    onChange={set('fuel_type')} />
+            <FacetSelect label="Transmission" value={filters.transmission} options={facets.transmissions} onChange={set('transmission')} />
+            <FacetSelect label="Color"        value={filters.color}        options={facets.colors}        onChange={set('color')} />
+            <input placeholder="Year from" type="number" value={filters.year_min} onChange={setEv('year_min')}
               className="input-field" />
-            <select value={filters.body_type} onChange={set('body_type')} className="input-field">
-              <option value="">Body type</option>
-              {['sedan','SUV','hatchback','minivan','compact','coupe','convertible','station wagon','kei car'].map(t =>
-                <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select value={filters.fuel_type} onChange={set('fuel_type')} className="input-field">
-              <option value="">Fuel type</option>
-              {['gasoline','diesel','hybrid','electric','PHEV'].map(t =>
-                <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select value={filters.transmission} onChange={set('transmission')} className="input-field">
-              <option value="">Transmission</option>
-              {['AT','MT','CVT','DCT','Semi-AT'].map(t =>
-                <option key={t} value={t}>{t}</option>)}
-            </select>
-            <input placeholder="Year from" type="number" value={filters.year_min} onChange={set('year_min')}
+            <input placeholder="Year to" type="number" value={filters.year_max} onChange={setEv('year_max')}
               className="input-field" />
-            <input placeholder="Year to" type="number" value={filters.year_max} onChange={set('year_max')}
+            <input placeholder="Max price (¥)" type="number" value={filters.price_max} onChange={setEv('price_max')}
               className="input-field" />
-            <input placeholder="Max price (¥)" type="number" value={filters.price_max} onChange={set('price_max')}
-              className="input-field" />
-            <select value={filters.sort} onChange={set('sort')} className="input-field">
+            <select value={filters.sort} onChange={setEv('sort')} className="input-field">
               <option value="created_at:desc">Newest first</option>
               <option value="price_jpy:asc">Price ↑</option>
               <option value="price_jpy:desc">Price ↓</option>

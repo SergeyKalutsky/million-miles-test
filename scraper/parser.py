@@ -77,13 +77,119 @@ def normalize_price_jpy(raw: str) -> Optional[int]:
 
 
 BRAND_MAP: dict[str, str] = {
+    # Japanese domestic
     "トヨタ": "Toyota", "ホンダ": "Honda", "日産": "Nissan",
     "スバル": "Subaru", "マツダ": "Mazda", "三菱": "Mitsubishi",
     "スズキ": "Suzuki", "ダイハツ": "Daihatsu", "いすゞ": "Isuzu",
-    "メルセデス・ベンツ": "Mercedes-Benz", "BMW": "BMW", "アウディ": "Audi",
-    "フォルクスワーゲン": "Volkswagen", "フォード": "Ford", "フィアット": "Fiat",
-    "スマート": "Smart", "ポルシェ": "Porsche", "レクサス": "Lexus",
-    "マクラーレン": "McLaren", "ランボルギーニ": "Lamborghini", "フェラーリ": "Ferrari",
+    "レクサス": "Lexus", "インフィニティ": "Infiniti", "アキュラ": "Acura",
+    # German
+    "メルセデス・ベンツ": "Mercedes-Benz", "メルセデスベンツ": "Mercedes-Benz",
+    "BMW": "BMW", "アウディ": "Audi", "フォルクスワーゲン": "Volkswagen",
+    "ポルシェ": "Porsche", "スマート": "Smart", "オペル": "Opel",
+    # Italian
+    "フィアット": "Fiat", "フェラーリ": "Ferrari", "ランボルギーニ": "Lamborghini",
+    "マセラティ": "Maserati", "アルファ　ロメオ": "Alfa Romeo", "アルファロメオ": "Alfa Romeo",
+    "アバルト": "Abarth", "ランチア": "Lancia",
+    # British
+    "ジャガー": "Jaguar", "ランドローバー": "Land Rover", "ミニ": "MINI",
+    "ベントレー": "Bentley", "ロールスロイス": "Rolls-Royce", "マクラーレン": "McLaren",
+    "ロータス": "Lotus", "アストンマーティン": "Aston Martin",
+    # American
+    "フォード": "Ford", "シボレー": "Chevrolet", "キャデラック": "Cadillac",
+    "クライスラー": "Chrysler", "ジープ": "Jeep", "ダッジ": "Dodge",
+    "リンカーン": "Lincoln", "ハマー": "Hummer", "テスラ": "Tesla",
+    # French
+    "プジョー": "Peugeot", "シトロエン": "Citroën", "ルノー": "Renault",
+    # Swedish / Other
+    "ボルボ": "Volvo", "サーブ": "Saab", "ヒュンダイ": "Hyundai", "キア": "Kia",
+}
+
+# Model names: Japanese katakana → English
+MODEL_MAP: dict[str, str] = {
+    # Alfa Romeo
+    "ジュリア": "Giulia", "ジュリエッタ": "Giulietta", "ステルヴィオ": "Stelvio",
+    "ミト": "MiTo", "スパイダー": "Spider", "ブレラ": "Brera",
+    # Audi
+    "クワトロ": "Quattro",
+    # BMW
+    "グランクーペ": "Gran Coupe", "グランツーリスモ": "Gran Turismo",
+    # Ferrari
+    "カリフォルニア": "California", "ポルトフィーノ": "Portofino",
+    "ローマ": "Roma", "テスタロッサ": "Testarossa",
+    # Lamborghini
+    "ウラカン": "Huracán", "アヴェンタドール": "Aventador", "ウルス": "Urus",
+    # Maserati
+    "クワトロポルテ": "Quattroporte", "ギブリ": "Ghibli", "グランカブリオ": "GranCabrio",
+    "グランツーリスモ": "GranTurismo", "レヴァンテ": "Levante",
+    # Mercedes-Benz
+    "マイバッハ": "Maybach",
+    # Porsche
+    "カイエン": "Cayenne", "マカン": "Macan", "パナメーラ": "Panamera",
+    "タイカン": "Taycan", "ボクスター": "Boxster", "ケイマン": "Cayman",
+    # Rolls-Royce
+    "ファントム": "Phantom", "レイス": "Wraith", "ゴースト": "Ghost",
+    "カリナン": "Cullinan", "ドーン": "Dawn",
+    # Bentley
+    "コンチネンタル": "Continental", "フライングスパー": "Flying Spur",
+    "ベンテイガ": "Bentayga", "ミュルザンヌ": "Mulsanne",
+    # General Japanese model names
+    "プリウス": "Prius", "クラウン": "Crown", "カムリ": "Camry",
+    "ランドクルーザー": "Land Cruiser", "ハイエース": "Hiace", "アルファード": "Alphard",
+    "ヴェルファイア": "Vellfire", "ハリアー": "Harrier", "ヴォクシー": "Voxy",
+    "シエンタ": "Sienta", "ヤリス": "Yaris", "アクア": "Aqua",
+    "ノア": "Noah", "エスティマ": "Estima", "セルシオ": "Celsior",
+    "スープラ": "Supra", "86": "86", "GR86": "GR86",
+    "フィット": "Fit", "シビック": "Civic", "アコード": "Accord",
+    "ステップワゴン": "Step WGN", "フリード": "Freed", "ヴェゼル": "Vezel",
+    "エヌボックス": "N-BOX", "オデッセイ": "Odyssey", "レジェンド": "Legend",
+    "スカイライン": "Skyline", "フェアレディＺ": "Fairlady Z", "フェアレディZ": "Fairlady Z",
+    "ノート": "Note", "セレナ": "Serena", "エクストレイル": "X-Trail",
+    "ジューク": "Juke", "キャラバン": "Caravan", "エルグランド": "Elgrand",
+    "インプレッサ": "Impreza", "レガシィ": "Legacy", "フォレスター": "Forester",
+    "アウトバック": "Outback", "レヴォーグ": "Levorg", "BRZ": "BRZ",
+    "デミオ": "Demio", "アテンザ": "Atenza", "アクセラ": "Axela",
+    "ＣＸ－５": "CX-5", "CX-5": "CX-5", "ＣＸ－３": "CX-3", "ロードスター": "Roadster",
+    "アウトランダー": "Outlander", "エクリプスクロス": "Eclipse Cross",
+    "パジェロ": "Pajero", "デリカ": "Delica",
+    "ジムニー": "Jimny", "スイフト": "Swift", "ソリオ": "Solio",
+    "ハスラー": "Hustler", "アルト": "Alto", "ワゴンＲ": "Wagon R",
+    "ミラ": "Mira", "タント": "Tanto", "ムーヴ": "Move",
+    "コペン": "Copen",
+}
+
+COLOR_MAP: dict[str, str] = {
+    "ブラック": "Black", "黒": "Black",
+    "ホワイト": "White", "白": "White",
+    "シルバー": "Silver", "シルバーメタリック": "Silver",
+    "グレー": "Gray", "グレイ": "Gray", "灰": "Gray",
+    "レッド": "Red", "赤": "Red",
+    "ブルー": "Blue", "青": "Blue",
+    "ネイビー": "Navy",
+    "グリーン": "Green", "緑": "Green",
+    "ゴールド": "Gold", "金": "Gold",
+    "ブラウン": "Brown", "茶": "Brown",
+    "ベージュ": "Beige",
+    "オレンジ": "Orange",
+    "イエロー": "Yellow", "黄": "Yellow",
+    "パープル": "Purple", "紫": "Purple",
+    "ピンク": "Pink",
+    "ワインレッド": "Wine Red", "バーガンディ": "Burgundy",
+    "チャンパン": "Champagne",
+    # compound / pearl / metallic variants
+    "ホワイトパールクリスタルシャイン": "Pearl White",
+    "クリスタルブラックパール": "Pearl Black",
+    "グラファイトブラックガラスフレーク": "Graphite Black",
+    "アイスホワイト": "Ice White",
+    "パール": "Pearl White",
+    "ミモザイエローパールメタリック": "Yellow Pearl",
+    "ソニックシルバー": "Silver",
+    "パールマイカ": "Pearl",
+    "マスタードイエローマイカメタリック": "Mustard Yellow",
+    "ブリリアントホワイトパール": "Brilliant White Pearl",
+    "アッシュ": "Ash Gray",
+    "ムーンライトブルーパールメタリック": "Blue Pearl",
+    "ダークグレーメタリック": "Dark Gray",
+    "プレミアムホワイトパールクリスタルシャイン": "Pearl White",
 }
 
 TRANSMISSION_MAP: dict[str, str] = {
@@ -98,7 +204,8 @@ FUEL_MAP: dict[str, str] = {
 
 BODY_MAP: dict[str, str] = {
     "ステーションワゴン": "station wagon", "ミニバン/ワンボックス": "minivan",
-    "SUV/クロカン": "SUV", "軽トラック/軽バン": "kei truck/van",
+    "SUV/クロカン": "SUV", "クロカン・ＳＵＶ": "SUV", "クロカン": "SUV",
+    "軽トラック/軽バン": "kei truck/van",
     "セダン": "sedan", "ハッチバック": "hatchback", "コンパクト": "compact",
     "ミニバン": "minivan", "SUV": "SUV", "クーペ": "coupe",
     "オープンカー": "convertible", "軽自動車": "kei car",
@@ -108,6 +215,10 @@ BODY_MAP: dict[str, str] = {
 
 def map_brand(ja: str) -> str:
     return BRAND_MAP.get(ja.strip(), ja.strip())
+
+def map_model(ja: str) -> str:
+    """Map Japanese model name to English. Falls back to original string."""
+    return MODEL_MAP.get(ja.strip(), ja.strip())
 
 def map_transmission(ja: str) -> str:
     for k in sorted(TRANSMISSION_MAP, key=len, reverse=True):
@@ -123,6 +234,18 @@ def map_body(ja: str) -> str:
         if k in ja:
             return v
     return ja.strip()
+
+def map_color(ja: str) -> str:
+    """Translate Japanese color string to English. Tries longest match first."""
+    ja = ja.strip()
+    # Try exact match first
+    if ja in COLOR_MAP:
+        return COLOR_MAP[ja]
+    # Try longest prefix/substring match
+    for k in sorted(COLOR_MAP, key=len, reverse=True):
+        if k in ja:
+            return COLOR_MAP[k]
+    return ja
 
 
 # ---------------------------------------------------------------------------
@@ -283,6 +406,7 @@ def parse_detail_page(url: str, html: str) -> CarDetail:
         if len(parts) >= 2:
             model_ja = parts[1]
     brand = map_brand(brand_ja) if brand_ja else None
+    model = map_model(model_ja) if model_ja else None
 
     price_jpy: Optional[int] = None
     offers = product_json.get("offers", [])
@@ -296,7 +420,8 @@ def parse_detail_page(url: str, html: str) -> CarDetail:
     transmission = map_transmission(td_map.get("ミッション", "")) if td_map.get("ミッション") else None
     fuel_type = map_fuel(td_map.get("エンジン種別", "")) if td_map.get("エンジン種別") else None
     body_type = map_body(td_map.get("ボディタイプ", "")) if td_map.get("ボディタイプ") else None
-    color = td_map.get("色") or product_json.get("color")
+    color_raw = td_map.get("色") or product_json.get("color") or ""
+    color = map_color(str(color_raw)) if color_raw else None
     location = td_map.get("地域") or None
 
     photos: list[str] = []
@@ -311,7 +436,7 @@ def parse_detail_page(url: str, html: str) -> CarDetail:
             photos.insert(0, str(og_url))
 
     return CarDetail(
-        external_id=external_id, source_url=url, brand=brand, model=model_ja,
+        external_id=external_id, source_url=url, brand=brand, model=model,
         year=year, mileage_km=mileage_km, price_jpy=price_jpy,
         transmission=transmission, fuel_type=fuel_type, body_type=body_type,
         color=color, location=location, photos=photos,

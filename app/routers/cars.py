@@ -40,6 +40,7 @@ async def list_cars(
     body_type: str | None = Query(None),
     fuel_type: str | None = Query(None),
     transmission: str | None = Query(None),
+    color: str | None = Query(None),
     location: str | None = Query(None, description="Filter by prefecture (partial match)"),
     year_min: int | None = Query(None, ge=1950),
     year_max: int | None = Query(None, le=2100),
@@ -49,6 +50,7 @@ async def list_cars(
     # --- sort ---
     sort_by: SortField = Query(SortField.created_at),
     order: Literal["asc", "desc"] = Query("desc"),
+    sort_dir: Literal["asc", "desc"] | None = Query(None),  # alias used by frontend
     # --- pagination ---
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -71,6 +73,8 @@ async def list_cars(
         stmt = stmt.where(func.lower(Car.fuel_type) == fuel_type.lower())
     if transmission:
         stmt = stmt.where(func.lower(Car.transmission) == transmission.lower())
+    if color:
+        stmt = stmt.where(func.lower(Car.color) == color.lower())
     if location:
         stmt = stmt.where(Car.location.ilike(f"%{location}%"))
     if year_min is not None:
@@ -90,7 +94,8 @@ async def list_cars(
 
     # --- apply sort ---
     sort_col = getattr(Car, sort_by.value)
-    stmt = stmt.order_by(desc(sort_col) if order == "desc" else asc(sort_col))
+    effective_order = sort_dir or order
+    stmt = stmt.order_by(desc(sort_col) if effective_order == "desc" else asc(sort_col))
 
     # --- apply pagination ---
     offset = (page - 1) * page_size
@@ -104,6 +109,33 @@ async def list_cars(
         page_size=page_size,
         items=[CarOut.model_validate(r) for r in rows],
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /cars/facets  — distinct filter values for dropdowns
+# ---------------------------------------------------------------------------
+
+@router.get("/facets")
+async def get_facets(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: CurrentUser,
+) -> dict:
+    """Return sorted distinct non-null values for all filterable columns."""
+    async def distinct(col):
+        rows = (await db.execute(
+            select(col).where(col.isnot(None)).distinct().order_by(col)
+        )).scalars().all()
+        return [r for r in rows if r and str(r).strip()]
+
+    return {
+        "brands":        await distinct(Car.brand),
+        "models":        await distinct(Car.model),
+        "body_types":    await distinct(Car.body_type),
+        "fuel_types":    await distinct(Car.fuel_type),
+        "transmissions": await distinct(Car.transmission),
+        "colors":        await distinct(Car.color),
+        "locations":     await distinct(Car.location),
+    }
 
 
 # ---------------------------------------------------------------------------
