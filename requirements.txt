@@ -1,0 +1,23 @@
+# Web framework & server
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+
+# Database
+sqlalchemy>=2.0.30
+asyncpg>=0.29.0          # async driver used by the app
+psycopg2-binary>=2.9.9   # sync driver used by Alembic migrations
+alembic>=1.13.0
+
+# Auth
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.9   # required for OAuth2PasswordRequestForm
+
+# Config
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+pydantic[email]>=2.7.0
+
+# Scraper
+requests>=2.31.0
+beautifulsoup4>=4.12.0
