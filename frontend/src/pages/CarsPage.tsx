@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
 import type { Car, PaginatedCars } from '../api/types'
@@ -8,7 +8,7 @@ import Navbar from '../components/Navbar'
 const PAGE_SIZE = 20
 
 interface Filters {
-  brand: string
+  brands: string[]
   body_type: string
   fuel_type: string
   transmission: string
@@ -27,12 +27,12 @@ interface Facets {
 }
 
 const INIT_FILTERS: Filters = {
-  brand: '', body_type: '', fuel_type: '', transmission: '', color: '',
+  brands: [], body_type: '', fuel_type: '', transmission: '', color: '',
   year_min: '', year_max: '', price_max: '',
 }
 
 function fmtPrice(v: number | null) {
-  if (!v) return '—'
+  if (v == null || v < 0) return '—'
   return `¥${v.toLocaleString()}`
 }
 function fmtMileage(v: number | null) {
@@ -65,9 +65,78 @@ function CarCard({ car }: { car: Car }) {
   )
 }
 
+// Multi-select brand picker with chips
+function BrandMultiSelect({
+  selected, options, onChange,
+}: { selected: string[]; options: string[]; onChange: (v: string[]) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function toggle(brand: string) {
+    if (selected.includes(brand)) onChange(selected.filter(b => b !== brand))
+    else onChange([...selected, brand])
+  }
+
+  const available = options.filter(o => !selected.includes(o))
+
+  return (
+    <div ref={ref} className="relative col-span-2 sm:col-span-1 xl:col-span-2">
+      {/* chips + trigger */}
+      <div
+        className="input-field flex flex-wrap gap-1 min-h-9.5 cursor-pointer items-center"
+        onClick={() => setOpen(o => !o)}
+      >
+        {selected.length === 0 && (
+          <span className="text-gray-400 dark:text-gray-500 text-sm select-none">Brand…</span>
+        )}
+        {selected.map(b => (
+          <span
+            key={b}
+            className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2 py-0.5 rounded-full"
+          >
+            {b}
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); toggle(b) }}
+              className="hover:text-blue-600 dark:hover:text-blue-300 leading-none"
+              aria-label={`Remove ${b}`}
+            >✕</button>
+          </span>
+        ))}
+        <span className="ml-auto text-gray-400 text-xs pl-1">▼</span>
+      </div>
+
+      {/* dropdown */}
+      {open && available.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {available.map(o => (
+            <button
+              key={o}
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { toggle(o); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FacetSelect({
-  label, value, options, onChange,
-}: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  placeholder, value, options, onChange,
+}: { placeholder: string; value: string; options: string[]; onChange: (v: string) => void }) {
   return (
     <div className="relative">
       <select
@@ -75,12 +144,13 @@ function FacetSelect({
         onChange={e => onChange(e.target.value)}
         className="input-field appearance-none pr-8"
       >
-        <option value="">{label}</option>
+        <option value="">{placeholder}</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
       <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">▼</span>
       {value && (
         <button
+          type="button"
           onClick={() => onChange('')}
           className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-sm leading-none"
           aria-label="Clear"
@@ -99,6 +169,7 @@ export default function CarsPage() {
   const [facets, setFacets] = useState<Facets>({ brands: [], body_types: [], fuel_types: [], transmissions: [], colors: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const topRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     api.get<Facets>('/cars/facets').then(r => setFacets(r.data)).catch(() => {})
@@ -109,18 +180,34 @@ export default function CarsPage() {
     setError('')
     try {
       const [sortField, sortDir] = s.split(':')
-      const params: Record<string, string | number> = { page: p, page_size: PAGE_SIZE }
-      if (f.brand)        params.brand        = f.brand
+      const params: Record<string, string | number | string[]> = { page: p, page_size: PAGE_SIZE }
+      // Send multiple brand values as repeated query params
+      if (f.brands.length === 1) params.brand = f.brands[0]
       if (f.body_type)    params.body_type    = f.body_type
       if (f.fuel_type)    params.fuel_type    = f.fuel_type
       if (f.transmission) params.transmission = f.transmission
       if (f.color)        params.color        = f.color
       if (f.year_min)     params.year_min     = f.year_min
       if (f.year_max)     params.year_max     = f.year_max
-      if (f.price_max)    params.price_max    = f.price_max
+      // Guard against negative price which causes 422
+      if (f.price_max) {
+        const v = parseInt(f.price_max, 10)
+        if (!isNaN(v) && v >= 0) params.price_max = v
+      }
       if (sortField)      params.sort_by      = sortField
       if (sortDir)        params.sort_dir     = sortDir
-      const { data: res } = await api.get<PaginatedCars>('/cars/', { params })
+
+      // Build URLSearchParams manually so multiple brands become repeated `brand=` params
+      const qs = new URLSearchParams()
+      for (const [k, v] of Object.entries(params)) {
+        if (Array.isArray(v)) v.forEach(item => qs.append(k, item))
+        else qs.append(k, String(v))
+      }
+      if (f.brands.length > 1) {
+        f.brands.forEach(b => qs.append('brand', b))
+      }
+
+      const { data: res } = await api.get<PaginatedCars>(`/cars/?${qs.toString()}`)
       setData(res)
     } catch {
       setError('Failed to load cars. Please try again.')
@@ -131,22 +218,27 @@ export default function CarsPage() {
 
   // Reset to page 1 on filter/sort change, then fetch
   useEffect(() => { setPage(1) }, [filters, sort])
-  useEffect(() => { fetchCars(filters, sort, page) }, [filters, sort, page, fetchCars])
+  useEffect(() => {
+    fetchCars(filters, sort, page)
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [filters, sort, page, fetchCars])
 
-  function setFilter(k: keyof Filters) {
-    return (v: string) => setFilters(f => ({ ...f, [k]: v }))
+  function setFilter<K extends keyof Filters>(k: K) {
+    return (v: Filters[K]) => setFilters(f => ({ ...f, [k]: v }))
   }
   function setFilterEv(k: keyof Filters) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setFilters(f => ({ ...f, [k]: e.target.value }))
   }
 
-  const hasFilters = Object.values(filters).some(Boolean)
+  const hasFilters = filters.brands.length > 0 || Object.entries(filters)
+    .filter(([k]) => k !== 'brands')
+    .some(([, v]) => Boolean(v))
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
       <Navbar username={username} onLogout={logout} />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div ref={topRef} className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Filter panel */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 mb-4 border border-gray-100 dark:border-gray-800">
@@ -160,14 +252,18 @@ export default function CarsPage() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            <FacetSelect label="Brand"        value={filters.brand}        options={facets.brands}        onChange={setFilter('brand')} />
-            <FacetSelect label="Body type"    value={filters.body_type}    options={facets.body_types}    onChange={setFilter('body_type')} />
-            <FacetSelect label="Fuel"         value={filters.fuel_type}    options={facets.fuel_types}    onChange={setFilter('fuel_type')} />
-            <FacetSelect label="Transmission" value={filters.transmission} options={facets.transmissions} onChange={setFilter('transmission')} />
-            <FacetSelect label="Color"        value={filters.color}        options={facets.colors}        onChange={setFilter('color')} />
-            <input placeholder="Year from" type="number" value={filters.year_min} onChange={setFilterEv('year_min')} className="input-field" />
-            <input placeholder="Year to"   type="number" value={filters.year_max} onChange={setFilterEv('year_max')} className="input-field" />
-            <input placeholder="Max price (¥)" type="number" value={filters.price_max} onChange={setFilterEv('price_max')} className="input-field" />
+            <BrandMultiSelect
+              selected={filters.brands}
+              options={facets.brands}
+              onChange={setFilter('brands')}
+            />
+            <FacetSelect placeholder="Body type…"    value={filters.body_type}    options={facets.body_types}    onChange={setFilter('body_type')} />
+            <FacetSelect placeholder="Fuel…"         value={filters.fuel_type}    options={facets.fuel_types}    onChange={setFilter('fuel_type')} />
+            <FacetSelect placeholder="Transmission…" value={filters.transmission} options={facets.transmissions} onChange={setFilter('transmission')} />
+            <FacetSelect placeholder="Color…"        value={filters.color}        options={facets.colors}        onChange={setFilter('color')} />
+            <input placeholder="Year from" type="number" min={1950} max={2100} value={filters.year_min} onChange={setFilterEv('year_min')} className="input-field" />
+            <input placeholder="Year to"   type="number" min={1950} max={2100} value={filters.year_max} onChange={setFilterEv('year_max')} className="input-field" />
+            <input placeholder="Max price (¥)" type="number" min={0} value={filters.price_max} onChange={setFilterEv('price_max')} className="input-field" />
           </div>
         </div>
 
@@ -208,17 +304,45 @@ export default function CarsPage() {
         )}
 
         {/* Pagination */}
-        {data && data.pages > 1 && (
+        {data && data.pages > 0 && (
           <div className="flex items-center justify-center gap-2 pt-8 flex-wrap">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-              className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300"
+            >
               ← Prev
             </button>
-            <span className="text-sm text-gray-500 dark:text-gray-400 px-2">
-              Page {data.page} of {data.pages}
-            </span>
-            <button disabled={page === data.pages} onClick={() => setPage(p => p + 1)}
-              className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300">
+
+            {/* page number buttons — show up to 7 around current page */}
+            {(() => {
+              const total = data.pages
+              const range: number[] = []
+              const delta = 2
+              for (let i = Math.max(1, page - delta); i <= Math.min(total, page + delta); i++) range.push(i)
+              // always include first and last with ellipsis
+              const pages: (number | '…')[] = []
+              if (range[0] > 1) { pages.push(1); if (range[0] > 2) pages.push('…') }
+              pages.push(...range)
+              if (range[range.length - 1] < total) { if (range[range.length - 1] < total - 1) pages.push('…'); pages.push(total) }
+              return pages.map((p2, i) =>
+                p2 === '…'
+                  ? <span key={`e${i}`} className="px-2 text-gray-400 text-sm select-none">…</span>
+                  : <button
+                      key={p2}
+                      onClick={() => setPage(p2 as number)}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition ${page === p2
+                        ? 'bg-blue-600 border-blue-600 text-white font-semibold'
+                        : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                    >{p2}</button>
+              )
+            })()}
+
+            <button
+              disabled={page === data.pages}
+              onClick={() => setPage(p => p + 1)}
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300"
+            >
               Next →
             </button>
           </div>
