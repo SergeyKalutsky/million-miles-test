@@ -91,24 +91,24 @@ function BrandMultiSelect({
     <div ref={ref} className="relative col-span-2 sm:col-span-1 xl:col-span-2">
       {/* chips + trigger */}
       <div
-        className="input-field flex flex-wrap gap-1 min-h-9.5 cursor-pointer items-center"
+        className="input-field flex flex-wrap gap-1.5 min-h-10 cursor-pointer items-center py-1.5"
         onClick={() => setOpen(o => !o)}
       >
         {selected.length === 0 && (
-          <span className="text-gray-400 dark:text-gray-500 text-sm select-none">Brand…</span>
+          <span className="text-gray-400 dark:text-gray-500 select-none">Brand…</span>
         )}
         {selected.map(b => (
           <span
             key={b}
-            className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2 py-0.5 rounded-full"
+            className="inline-flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-medium px-2.5 py-0.5 rounded-full"
           >
             {b}
             <button
               type="button"
               onClick={e => { e.stopPropagation(); toggle(b) }}
-              className="hover:text-blue-600 dark:hover:text-blue-300 leading-none"
+              className="hover:text-blue-600 dark:hover:text-blue-300 leading-none text-base"
               aria-label={`Remove ${b}`}
-            >✕</button>
+            >×</button>
           </span>
         ))}
         <span className="ml-auto text-gray-400 text-xs pl-1">▼</span>
@@ -170,6 +170,7 @@ export default function CarsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const topRef = useRef<HTMLDivElement>(null)
+  const userPageChange = useRef(false)
 
   useEffect(() => {
     api.get<Facets>('/cars/facets').then(r => setFacets(r.data)).catch(() => {})
@@ -220,7 +221,11 @@ export default function CarsPage() {
   useEffect(() => { setPage(1) }, [filters, sort])
   useEffect(() => {
     fetchCars(filters, sort, page)
-    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // Only scroll when the user explicitly navigated to a different page
+    if (userPageChange.current) {
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      userPageChange.current = false
+    }
   }, [filters, sort, page, fetchCars])
 
   function setFilter<K extends keyof Filters>(k: K) {
@@ -244,12 +249,17 @@ export default function CarsPage() {
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 mb-4 border border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Filters</p>
-            {hasFilters && (
-              <button onClick={() => setFilters(INIT_FILTERS)}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                Clear all
-              </button>
-            )}
+            <button
+              onClick={() => setFilters(INIT_FILTERS)}
+              disabled={!hasFilters}
+              className="text-sm px-3 py-1.5 rounded-md border transition font-medium
+                disabled:opacity-30 disabled:cursor-not-allowed
+                border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300
+                hover:bg-red-50 hover:border-red-300 hover:text-red-600
+                dark:hover:bg-red-950 dark:hover:border-red-700 dark:hover:text-red-400"
+            >
+              ✕ Clear all
+            </button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             <BrandMultiSelect
@@ -308,7 +318,7 @@ export default function CarsPage() {
           <div className="flex items-center justify-center gap-2 pt-8 flex-wrap">
             <button
               disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => { userPageChange.current = true; setPage(p => p - 1) }}
               className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300"
             >
               ← Prev
@@ -330,7 +340,7 @@ export default function CarsPage() {
                   ? <span key={`e${i}`} className="px-2 text-gray-400 text-sm select-none">…</span>
                   : <button
                       key={p2}
-                      onClick={() => setPage(p2 as number)}
+                      onClick={() => { userPageChange.current = true; setPage(p2 as number) }}
                       className={`px-3 py-1.5 rounded-lg text-sm border transition ${page === p2
                         ? 'bg-blue-600 border-blue-600 text-white font-semibold'
                         : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
@@ -340,7 +350,7 @@ export default function CarsPage() {
 
             <button
               disabled={page === data.pages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => { userPageChange.current = true; setPage(p => p + 1) }}
               className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300"
             >
               Next →
