@@ -5,13 +5,14 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:             ${POSTGRES_USER}
+      POSTGRES_PASSWORD:         ${POSTGRES_PASSWORD}
+      POSTGRES_DB:               ${POSTGRES_DB}
+      POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"       # expose for local psql / DBeaver access
+      - "5433:5432"       # expose for local psql / DBeaver access (5433 avoids conflict with local PG)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s

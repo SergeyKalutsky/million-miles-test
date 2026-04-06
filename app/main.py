@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
 from app.config import settings
-from app.database import AsyncSessionLocal, Base, engine
+from app.database import AsyncSessionLocal, engine
 from app.models import User
 from app.routers import auth, cars
 from app.security import hash_password
@@ -35,8 +35,7 @@ async def _seed_admin() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Tables are created by Alembic in entrypoint.sh — don't call create_all here.
     await _seed_admin()
     yield
     await engine.dispose()
