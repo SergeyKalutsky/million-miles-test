@@ -31,6 +31,18 @@ const INIT_FILTERS: Filters = {
   year_min: '', year_max: '', price_max: '',
 }
 
+// Return a valid value to send to the API, or '' to omit the param
+function sanitizeYear(v: string): string {
+  const n = parseInt(v, 10)
+  if (isNaN(n) || n < 1950 || n > 2100) return ''
+  return String(n)
+}
+function sanitizePrice(v: string): string {
+  const n = parseInt(v, 10)
+  if (isNaN(n) || n < 0) return ''
+  return String(n)
+}
+
 function fmtPrice(v: number | null) {
   if (v == null || v < 0) return '—'
   return `¥${v.toLocaleString()}`
@@ -116,7 +128,7 @@ function BrandMultiSelect({
 
       {/* dropdown */}
       {open && available.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-56 overflow-y-auto content-scroll">
           {available.map(o => (
             <button
               key={o}
@@ -137,24 +149,57 @@ function BrandMultiSelect({
 function FacetSelect({
   placeholder, value, options, onChange,
 }: { placeholder: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="input-field appearance-none pr-8"
+    <div ref={ref} className="relative">
+      {/* trigger */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        className="input-field flex items-center cursor-pointer select-none pr-8"
       >
-        <option value="">{placeholder}</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">▼</span>
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-sm leading-none"
-          aria-label="Clear"
-        >✕</button>
+        <span className={value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}>
+          {value || placeholder}
+        </span>
+        {value && (
+          <button
+            type="button"
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onChange(''); setOpen(false) }}
+            className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 leading-none"
+            aria-label="Clear"
+          >✕</button>
+        )}
+        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">▼</span>
+      </div>
+
+      {/* dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-56 overflow-y-auto content-scroll">
+          {options.map(o => (
+            <button
+              key={o}
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onChange(o); setOpen(false) }}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors
+                ${o === value
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )
@@ -163,6 +208,8 @@ function FacetSelect({
 export default function CarsPage() {
   const { username, logout } = useAuth()
   const [filters, setFilters] = useState<Filters>(INIT_FILTERS)
+  // Separate state for number inputs — updates immediately for display, debounced into filters
+  const [inputValues, setInputValues] = useState({ year_min: '', year_max: '', price_max: '' })
   const [sort, setSort] = useState('created_at:desc')
   const [page, setPage] = useState(1)
   const [data, setData] = useState<PaginatedCars | null>(null)
@@ -176,6 +223,19 @@ export default function CarsPage() {
     api.get<Facets>('/cars/facets').then(r => setFacets(r.data)).catch(() => {})
   }, [])
 
+  // Debounce number inputs — only commit to filters after 500 ms of no typing
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setFilters(f => ({
+        ...f,
+        year_min:  sanitizeYear(inputValues.year_min),
+        year_max:  sanitizeYear(inputValues.year_max),
+        price_max: sanitizePrice(inputValues.price_max),
+      }))
+    }, 500)
+    return () => clearTimeout(t)
+  }, [inputValues])
+
   const fetchCars = useCallback(async (f: Filters, s: string, p: number) => {
     setLoading(true)
     setError('')
@@ -188,13 +248,10 @@ export default function CarsPage() {
       if (f.fuel_type)    params.fuel_type    = f.fuel_type
       if (f.transmission) params.transmission = f.transmission
       if (f.color)        params.color        = f.color
+      // year / price already sanitized before being stored in filters
       if (f.year_min)     params.year_min     = f.year_min
       if (f.year_max)     params.year_max     = f.year_max
-      // Guard against negative price which causes 422
-      if (f.price_max) {
-        const v = parseInt(f.price_max, 10)
-        if (!isNaN(v) && v >= 0) params.price_max = v
-      }
+      if (f.price_max)    params.price_max    = f.price_max
       if (sortField)      params.sort_by      = sortField
       if (sortDir)        params.sort_dir     = sortDir
 
@@ -231,26 +288,32 @@ export default function CarsPage() {
   function setFilter<K extends keyof Filters>(k: K) {
     return (v: Filters[K]) => setFilters(f => ({ ...f, [k]: v }))
   }
-  function setFilterEv(k: keyof Filters) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setFilters(f => ({ ...f, [k]: e.target.value }))
+  function setInputEv(k: keyof typeof inputValues) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setInputValues(iv => ({ ...iv, [k]: e.target.value }))
+  }
+  function clearAll() {
+    setFilters(INIT_FILTERS)
+    setInputValues({ year_min: '', year_max: '', price_max: '' })
   }
 
-  const hasFilters = filters.brands.length > 0 || Object.entries(filters)
-    .filter(([k]) => k !== 'brands')
-    .some(([, v]) => Boolean(v))
+  const hasFilters = filters.brands.length > 0
+    || Object.entries(filters).filter(([k]) => k !== 'brands').some(([, v]) => Boolean(v))
+    || Object.values(inputValues).some(Boolean)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-950 transition-colors">
       <Navbar username={username} onLogout={logout} />
 
-      <div ref={topRef} className="max-w-7xl mx-auto px-4 py-6">
+      <div ref={topRef} className="content-scroll flex-1 min-h-0">
+        <div className="max-w-7xl mx-auto px-4 py-6">
 
         {/* Filter panel */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 mb-4 border border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Filters</p>
             <button
-              onClick={() => setFilters(INIT_FILTERS)}
+              onClick={clearAll}
               disabled={!hasFilters}
               className="text-sm px-3 py-1.5 rounded-md border transition font-medium
                 disabled:opacity-30 disabled:cursor-not-allowed
@@ -271,9 +334,9 @@ export default function CarsPage() {
             <FacetSelect placeholder="Fuel…"         value={filters.fuel_type}    options={facets.fuel_types}    onChange={setFilter('fuel_type')} />
             <FacetSelect placeholder="Transmission…" value={filters.transmission} options={facets.transmissions} onChange={setFilter('transmission')} />
             <FacetSelect placeholder="Color…"        value={filters.color}        options={facets.colors}        onChange={setFilter('color')} />
-            <input placeholder="Year from" type="number" min={1950} max={2100} value={filters.year_min} onChange={setFilterEv('year_min')} className="input-field" />
-            <input placeholder="Year to"   type="number" min={1950} max={2100} value={filters.year_max} onChange={setFilterEv('year_max')} className="input-field" />
-            <input placeholder="Max price (¥)" type="number" min={0} value={filters.price_max} onChange={setFilterEv('price_max')} className="input-field" />
+            <input placeholder="Year from"    type="number" min={1950} max={2100} value={inputValues.year_min}  onChange={setInputEv('year_min')}  className="input-field" />
+            <input placeholder="Year to"      type="number" min={1950} max={2100} value={inputValues.year_max}  onChange={setInputEv('year_max')}  className="input-field" />
+            <input placeholder="Max price (¥)" type="number" min={0}             value={inputValues.price_max} onChange={setInputEv('price_max')} className="input-field" />
           </div>
         </div>
 
@@ -357,7 +420,8 @@ export default function CarsPage() {
             </button>
           </div>
         )}
-      </div>
+        </div>{/* max-w-7xl */}
+      </div>{/* content-scroll */}
     </div>
   )
 }
