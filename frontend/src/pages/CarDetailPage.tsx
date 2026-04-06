@@ -52,7 +52,7 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center cursor-zoom-out"
       onClick={onClose}
     >
       {/* Spinner shown until image loads */}
@@ -73,7 +73,7 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
       <button
         onClick={e => { e.stopPropagation(); onClose() }}
         aria-label="Close"
-        className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
+        className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white cursor-pointer"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-5 h-5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -91,7 +91,7 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
           <button
             onClick={e => { e.stopPropagation(); prev() }}
             aria-label="Previous"
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
               <path d="M15 18l-6-6 6-6"/>
@@ -100,7 +100,7 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
           <button
             onClick={e => { e.stopPropagation(); next() }}
             aria-label="Next"
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
               <path d="M9 18l6-6-6-6"/>
@@ -120,7 +120,7 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
             <button
               key={i}
               onClick={() => { setLoaded(false); setIdx(i) }}
-              className={`shrink-0 rounded-md overflow-hidden border-2 transition-all ${
+              className={`shrink-0 rounded-md overflow-hidden border-2 transition-all cursor-pointer ${
                 i === idx ? 'border-blue-400 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
               }`}
             >
@@ -204,6 +204,7 @@ export default function CarDetailPage() {
                   className="w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 cursor-zoom-in"
                   style={{ aspectRatio: '4/3', maxHeight: '320px' }}
                   onClick={() => car.photos.length > 0 && setLightboxOpen(true)}
+                  title={car.photos.length > 0 ? 'Click to view full size' : undefined}
                 >
                   {car.photos[activePhoto] ? (
                     <img
@@ -226,7 +227,8 @@ export default function CarDetailPage() {
                       <button
                         key={i}
                         onClick={() => setActivePhoto(i)}
-                        className={`shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                        title={`Photo ${i + 1}`}
+                        className={`shrink-0 rounded-lg overflow-hidden border-2 transition cursor-pointer ${
                           i === activePhoto
                             ? 'border-blue-500'
                             : 'border-transparent opacity-60 hover:opacity-100'

@@ -36,7 +36,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       <button
         disabled={page === 1}
         onClick={() => onPageChange(page - 1)}
-        className={`${BTN_BASE} disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800`}
+        className={`${BTN_BASE} disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800`}
       >
         ← Prev
       </button>
@@ -50,7 +50,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+            className={`px-3 py-1.5 rounded-lg text-sm border transition cursor-pointer ${
               page === p
                 ? 'bg-blue-600 border-blue-600 text-white font-semibold'
                 : `${BTN_BASE} hover:bg-gray-50 dark:hover:bg-gray-800`
@@ -64,7 +64,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       <button
         disabled={page === totalPages}
         onClick={() => onPageChange(page + 1)}
-        className={`${BTN_BASE} disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800`}
+        className={`${BTN_BASE} disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800`}
       >
         Next →
       </button>

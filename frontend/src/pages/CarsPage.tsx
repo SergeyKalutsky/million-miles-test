@@ -128,6 +128,7 @@ export default function CarsPage() {
                 value={query.sort}
                 onChange={e => setQuery(q => ({ ...q, sort: e.target.value, page: 1 }))}
                 className="input-field w-auto pl-3 pr-8 py-1.5 text-xs font-medium appearance-none cursor-pointer"
+                title="Sort results"
               >
                 <option value="created_at:desc">Newest first</option>
                 <option value="price_jpy:asc">Price ↑</option>

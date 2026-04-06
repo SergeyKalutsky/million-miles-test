@@ -41,6 +41,7 @@ export default function LoginPage() {
               value={username}
               onChange={e => setUsername(e.target.value)}
               autoComplete="username"
+              autoFocus
               required
             />
           </div>
@@ -64,7 +65,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
           >
             {loading && (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -32,8 +32,9 @@ export default function Navbar({ username, onLogout }: Props) {
           {/* iOS-style dark mode toggle */}
           <button
             onClick={toggle}
-            aria-label="Toggle dark mode"
-            className="flex items-center gap-1.5 select-none"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="flex items-center gap-1.5 select-none cursor-pointer"
           >
             {/* Sun icon */}
             <svg className={`w-4 h-4 transition-colors ${isDark ? 'text-gray-500' : 'text-yellow-400'}`}
@@ -56,7 +57,7 @@ export default function Navbar({ username, onLogout }: Props) {
 
           <button
             onClick={handleLogout}
-            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition font-medium"
+            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition font-medium cursor-pointer"
           >
             Sign out
           </button>

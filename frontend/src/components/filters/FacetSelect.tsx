@@ -25,13 +25,13 @@ export default function FacetSelect({ placeholder, value, options, onChange }: P
             type="button"
             onMouseDown={e => e.stopPropagation()}
             onClick={e => { e.stopPropagation(); onChange(''); setOpen(false) }}
-            className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 leading-none"
+            className="absolute right-7 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 leading-none cursor-pointer"
             aria-label="Clear"
           >
             ✕
           </button>
         )}
-        <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">▼</span>
+        <span className={`pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▼</span>
       </div>
 
       {/* dropdown */}
@@ -43,7 +43,7 @@ export default function FacetSelect({ placeholder, value, options, onChange }: P
               type="button"
               onMouseDown={e => e.preventDefault()}
               onClick={() => { onChange(o); setOpen(false) }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+              className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer ${
                 o === value
                   ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'

@@ -35,14 +35,14 @@ export default function BrandMultiSelect({ selected, options, onChange }: Props)
             <button
               type="button"
               onClick={e => { e.stopPropagation(); toggle(b) }}
-              className="hover:text-blue-600 dark:hover:text-blue-300 leading-none text-base"
+              className="hover:text-blue-600 dark:hover:text-blue-300 leading-none text-base cursor-pointer"
               aria-label={`Remove ${b}`}
             >
               ×
             </button>
           </span>
         ))}
-        <span className="ml-auto text-gray-400 text-xs pl-1">▼</span>
+        <span className={`ml-auto text-gray-400 text-xs pl-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▼</span>
       </div>
 
       {/* dropdown */}
@@ -54,7 +54,7 @@ export default function BrandMultiSelect({ selected, options, onChange }: Props)
               type="button"
               onMouseDown={e => e.preventDefault()}
               onClick={() => { toggle(o); setOpen(false) }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 cursor-pointer"
             >
               {o}
             </button>
