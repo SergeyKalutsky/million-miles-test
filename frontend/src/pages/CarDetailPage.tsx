@@ -206,13 +206,13 @@ export default function CarDetailPage() {
           )}
 
           {car && (
-            <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-10 min-w-0">
               {/* ── Gallery ── */}
-              <div>
+              <div className="min-w-0">
                 {/* Main image */}
                 <div
-                  className="rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 cursor-zoom-in"
-                  style={{ aspectRatio: '16/9' }}
+                  className="w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 cursor-zoom-in"
+                  style={{ aspectRatio: '4/3', maxHeight: '320px' }}
                   onClick={() => car.photos.length > 0 && setLightboxOpen(true)}
                 >
                   {car.photos[activePhoto] ? (
@@ -269,7 +269,7 @@ export default function CarDetailPage() {
                   href={car.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-lg transition text-sm"
                 >
                   View on CarSensor ↗
                 </a>
