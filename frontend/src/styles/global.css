@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer components {
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900
+           focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition
+           dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:focus:border-blue-400;
   }
 }
