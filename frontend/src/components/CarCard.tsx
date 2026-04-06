@@ -1,12 +1,14 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import type { Car } from '../api/types'
 import { fmtPrice, fmtMileage } from '../lib/format'
 
 export default function CarCard({ car }: { car: Car }) {
   const img = car.photos[0]
+  const { search } = useLocation()
   return (
     <Link
       to={`/cars/${car.id}`}
+      state={{ back: `/${search}` }}
       className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden flex flex-col"
     >
       {img ? (

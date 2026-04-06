@@ -32,6 +32,16 @@ export default function CarsPage() {
   const facets = useFacets()
   const { data, loading, error } = useCars(query.filters, query.sort, query.page)
 
+  // Keep inputValues in sync with the URL (e.g. back-navigation changes the URL
+  // externally, so we need to pull the new values back into local input state)
+  useEffect(() => {
+    setInputValues({
+      year_min:  query.filters.year_min,
+      year_max:  query.filters.year_max,
+      price_max: query.filters.price_max,
+    })
+  }, [query.filters.year_min, query.filters.year_max, query.filters.price_max])
+
   // Debounce number inputs — commit to URL after 500 ms of no typing
   useEffect(() => {
     const t = setTimeout(() => {

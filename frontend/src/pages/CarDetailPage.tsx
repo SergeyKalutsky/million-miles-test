@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { useCar } from '../hooks/useCar'
@@ -137,6 +137,8 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
 export default function CarDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { username, logout } = useAuth()
+  const location = useLocation()
+  const backTo = (location.state as { back?: string } | null)?.back ?? '/'
   const { car, loading, error } = useCar(id)
   const [activePhoto, setActivePhoto] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -171,7 +173,7 @@ export default function CarDetailPage() {
       <div className="content-scroll flex-1 min-h-0">
         <div className="max-w-5xl mx-auto px-4 py-6">
           <Link
-            to="/"
+            to={backTo}
             className="inline-flex items-center gap-1.5 mb-5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
