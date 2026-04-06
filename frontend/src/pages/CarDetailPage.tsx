@@ -7,11 +7,11 @@ import Navbar from '../components/Navbar'
 
 function fmtPrice(v: number | null) {
   if (!v) return '—'
-  return `¥${(v / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })}万 (¥${v.toLocaleString()})`
+  return `¥${v.toLocaleString()}`
 }
 function fmtMileage(v: number | null) {
   if (!v) return '—'
-  return `${(v / 10000).toFixed(1)} 万km`
+  return `${v.toLocaleString()} km`
 }
 
 interface Spec { label: string; value: string }

@@ -34,11 +34,11 @@ const INIT_FILTERS: Filters = {
 
 function fmtPrice(v: number | null) {
   if (!v) return '—'
-  return `¥${(v / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 1 })}万`
+  return `¥${v.toLocaleString()}`
 }
 function fmtMileage(v: number | null) {
   if (!v) return '—'
-  return `${(v / 10000).toFixed(1)} 万km`
+  return `${v.toLocaleString()} km`
 }
 
 function CarCard({ car }: { car: Car }) {
