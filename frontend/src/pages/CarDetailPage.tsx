@@ -1,18 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import api from '../api/client'
-import type { Car } from '../api/types'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
-
-function fmtPrice(v: number | null) {
-  if (!v) return '—'
-  return `¥${v.toLocaleString()}`
-}
-function fmtMileage(v: number | null) {
-  if (!v) return '—'
-  return `${v.toLocaleString()} km`
-}
+import { useCar } from '../hooks/useCar'
+import { fmtPrice, fmtMileage } from '../lib/format'
 
 interface Spec { label: string; value: string }
 
@@ -146,19 +137,10 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
 export default function CarDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { username, logout } = useAuth()
-  const [car, setCar] = useState<Car | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { car, loading, error } = useCar(id)
   const [activePhoto, setActivePhoto] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-
-  useEffect(() => {
-    setLoading(true)
-    api.get<Car>(`/cars/${id}`)
-      .then((r: { data: Car }) => setCar(r.data))
-      .catch(() => setError('Car not found'))
-      .finally(() => setLoading(false))
-  }, [id])
+  const closeLightbox = useCallback(() => setLightboxOpen(false), [])
 
   function onThumbWheel(e: React.WheelEvent<HTMLDivElement>) {
     e.currentTarget.scrollLeft += e.deltaY
@@ -182,7 +164,7 @@ export default function CarDetailPage() {
         <Lightbox
           photos={car.photos}
           initial={activePhoto}
-          onClose={() => setLightboxOpen(false)}
+          onClose={closeLightbox}
         />
       )}
 
@@ -238,7 +220,7 @@ export default function CarDetailPage() {
                     className="flex gap-2 overflow-x-auto pb-1 content-scroll"
                     onWheel={onThumbWheel}
                   >
-                    {car.photos.map((url, i) => (
+                    {car.photos.map((url: string, i: number) => (
                       <button
                         key={i}
                         onClick={() => setActivePhoto(i)}

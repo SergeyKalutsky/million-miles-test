@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 
 interface Props {
@@ -19,9 +19,9 @@ export default function Navbar({ username, onLogout }: Props) {
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <a href="/" className="text-blue-600 dark:text-blue-400 font-extrabold text-lg whitespace-nowrap tracking-tight">
+        <Link to="/" className="text-blue-600 dark:text-blue-400 font-extrabold text-lg whitespace-nowrap tracking-tight">
           🚗 Million Miles
-        </a>
+        </Link>
         <div className="flex items-center gap-4">
           {username && (
             <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">
