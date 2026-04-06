@@ -10,6 +10,7 @@ html, body, #root {
 /* Thin themed scrollbar for the content area */
 .content-scroll {
   overflow-y: auto;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;                        /* Firefox */
   scrollbar-color: transparent transparent;     /* Firefox — hidden until hover */
   transition: scrollbar-color 0.2s;
