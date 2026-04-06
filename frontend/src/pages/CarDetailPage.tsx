@@ -16,12 +16,12 @@ function fmtMileage(v: number | null) {
 
 interface Spec { label: string; value: string }
 
-function SpecCard({ label, value }: Spec) {
+function SpecRow({ label, value }: Spec) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-      <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{label}</p>
-      <p className="font-semibold text-gray-900 dark:text-gray-100">{value}</p>
-    </div>
+    <>
+      <dt className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500 py-2 pr-4 border-b border-gray-100 dark:border-gray-800">{label}</dt>
+      <dd className="text-sm font-semibold text-gray-900 dark:text-gray-100 py-2 border-b border-gray-100 dark:border-gray-800">{value}</dd>
+    </>
   )
 }
 
@@ -160,7 +160,6 @@ export default function CarDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  // Scroll thumbnail strip with mouse wheel horizontally
   function onThumbWheel(e: React.WheelEvent<HTMLDivElement>) {
     e.currentTarget.scrollLeft += e.deltaY
   }
@@ -176,7 +175,7 @@ export default function CarDetailPage() {
   ] : []
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-950 transition-colors">
       <Navbar username={username} onLogout={logout} />
 
       {lightboxOpen && car && (
@@ -187,96 +186,97 @@ export default function CarDetailPage() {
         />
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4">
-          ← Back to listings
-        </Link>
+      <div className="content-scroll flex-1 min-h-0">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <Link to="/" className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline mb-5">
+            ← Back to listings
+          </Link>
 
-        {loading && (
-          <div className="flex justify-center py-32">
-            <span className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          </div>
-        )}
+          {loading && (
+            <div className="flex justify-center py-32">
+              <span className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+            </div>
+          )}
 
-        {error && (
-          <div className="text-center py-32 text-gray-400">
-            <div className="text-5xl mb-3">😕</div>
-            <p>{error}</p>
-          </div>
-        )}
+          {error && (
+            <div className="text-center py-32 text-gray-400">
+              <div className="text-5xl mb-3">😕</div>
+              <p>{error}</p>
+            </div>
+          )}
 
-        {car && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Gallery */}
-            <div>
-              {/* Main image — click opens lightbox */}
-              <div
-                className="rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 cursor-zoom-in"
-                style={{ aspectRatio: '16/9' }}
-                onClick={() => car.photos.length > 0 && setLightboxOpen(true)}
-              >
-                {car.photos[activePhoto] ? (
-                  <img
-                    src={car.photos[activePhoto]}
-                    alt={`${car.brand} ${car.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200">🚗</div>
+          {car && (
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
+              {/* ── Gallery ── */}
+              <div>
+                {/* Main image */}
+                <div
+                  className="rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 cursor-zoom-in"
+                  style={{ aspectRatio: '16/9' }}
+                  onClick={() => car.photos.length > 0 && setLightboxOpen(true)}
+                >
+                  {car.photos[activePhoto] ? (
+                    <img
+                      src={car.photos[activePhoto]}
+                      alt={`${car.brand} ${car.model}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-6xl text-gray-200">🚗</div>
+                  )}
+                </div>
+
+                {/* Thumbnail strip */}
+                {car.photos.length > 1 && (
+                  <div
+                    className="flex gap-2 overflow-x-auto pb-1 content-scroll"
+                    onWheel={onThumbWheel}
+                  >
+                    {car.photos.map((url, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setActivePhoto(i)}
+                        className={`shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                          i === activePhoto
+                            ? 'border-blue-500'
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={url} alt="" className="w-20 h-14 object-cover" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {/* Thumbnail strip — mouse-wheel scrollable */}
-              {car.photos.length > 1 && (
-                <div
-                  className="flex gap-2 overflow-x-auto pb-2 scroll-smooth"
-                  style={{ scrollbarWidth: 'thin' }}
-                  onWheel={onThumbWheel}
+              {/* ── Info ── */}
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-semibold mb-1">
+                  {car.brand ?? '—'}
+                </p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-1">
+                  {car.model ?? 'Unknown model'}
+                </h1>
+                <p className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 mb-5">
+                  {fmtPrice(car.price_jpy)}
+                </p>
+
+                <dl className="grid grid-cols-[auto_1fr] mb-5">
+                  {specs.map(s => <SpecRow key={s.label} {...s} />)}
+                </dl>
+
+                <a
+                  href={car.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm"
                 >
-                  {car.photos.map((url, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActivePhoto(i)}
-                      className={`flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                        i === activePhoto
-                          ? 'border-blue-500'
-                          : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={url} alt="" className="w-24 h-16 object-cover" loading="lazy" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Info */}
-            <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-semibold mb-1">
-                {car.brand ?? '—'}
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-2">
-                {car.model ?? 'Unknown model'}
-              </h1>
-              <p className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 mb-5">
-                {fmtPrice(car.price_jpy)}
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {specs.map(s => <SpecCard key={s.label} {...s} />)}
+                  View on CarSensor ↗
+                </a>
               </div>
-
-              <a
-                href={car.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-xl transition text-sm"
-              >
-                View on CarSensor ↗
-              </a>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
