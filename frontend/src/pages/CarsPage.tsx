@@ -28,6 +28,10 @@ export default function CarsPage() {
     price_max: query.filters.price_max,
   })
   const topRef = useRef<HTMLDivElement>(null)
+  // Track whether inputValues has been changed by the user (vs. initialised from
+  // the URL on mount).  Without this guard the debounce effect fires on mount and
+  // resets the page to 1, causing the page-2 → detail → back flicker.
+  const inputDirty = useRef(false)
 
   const facets = useFacets()
   const { data, loading, error } = useCars(query.filters, query.sort, query.page)
@@ -42,8 +46,11 @@ export default function CarsPage() {
     })
   }, [query.filters.year_min, query.filters.year_max, query.filters.price_max])
 
-  // Debounce number inputs — commit to URL after 500 ms of no typing
+  // Debounce number inputs — commit to URL after 500 ms of no typing.
+  // Skip the very first run (mount) so that returning from a detail page while
+  // on page 2+ doesn't reset the page back to 1.
   useEffect(() => {
+    if (!inputDirty.current) return
     const t = setTimeout(() => {
       setQuery(q => ({
         ...q,
@@ -64,10 +71,13 @@ export default function CarsPage() {
       setQuery(q => ({ ...q, page: 1, filters: { ...q.filters, [k]: v } }))
   }
   function setInputEv(k: keyof typeof inputValues) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      inputDirty.current = true
       setInputValues(iv => ({ ...iv, [k]: e.target.value }))
+    }
   }
   function clearAll() {
+    inputDirty.current = false
     setQuery(INIT_QUERY)
     setInputValues({ year_min: '', year_max: '', price_max: '' })
   }
