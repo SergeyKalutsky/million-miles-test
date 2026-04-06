@@ -53,46 +53,58 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
       className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
       onClick={onClose}
     >
-      {/* Main image */}
+      {/* Main image — pointer-events-none so clicks fall through to overlay/buttons */}
       <img
         src={photos[idx]}
         alt=""
-        className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-        onClick={e => e.stopPropagation()}
+        className="max-h-[80vh] max-w-[80vw] sm:max-w-[90vw] object-contain rounded-lg shadow-2xl pointer-events-none select-none"
       />
 
-      {/* Close */}
+      {/* Close — top-right, large tap target */}
       <button
-        onClick={onClose}
-        className="absolute top-4 right-5 text-white text-3xl leading-none hover:text-gray-300 transition"
+        onClick={e => { e.stopPropagation(); onClose() }}
         aria-label="Close"
+        className="absolute top-3 right-3 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 transition text-white text-xl leading-none"
       >✕</button>
 
-      {/* Prev / Next */}
+      {/* Counter */}
+      <p className="absolute top-4 left-4 z-10 text-white/70 text-sm tabular-nums">
+        {idx + 1} / {photos.length}
+      </p>
+
+      {/* Prev / Next — tall clickable strips on the sides */}
       {photos.length > 1 && (
         <>
           <button
             onClick={e => { e.stopPropagation(); prev() }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 transition select-none"
             aria-label="Previous"
-          >‹</button>
+            className="absolute left-0 top-0 h-full w-14 sm:w-20 z-10 flex items-center justify-center group"
+          >
+            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 group-hover:bg-black/70 transition text-white text-2xl leading-none select-none">
+              ‹
+            </span>
+          </button>
           <button
             onClick={e => { e.stopPropagation(); next() }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl hover:text-gray-300 transition select-none"
             aria-label="Next"
-          >›</button>
+            className="absolute right-0 top-0 h-full w-14 sm:w-20 z-10 flex items-center justify-center group"
+          >
+            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 group-hover:bg-black/70 transition text-white text-2xl leading-none select-none">
+              ›
+            </span>
+          </button>
         </>
       )}
 
       {/* Thumbnail strip */}
       {photos.length > 1 && (
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-[90vw] px-2 pb-1"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 overflow-x-auto max-w-[80vw] px-2 pb-1"
           onClick={e => e.stopPropagation()}
         >
           {photos.map((url, i) => (
             <button key={i} onClick={() => setIdx(i)}
-              className={`flex-shrink-0 rounded-md overflow-hidden border-2 transition ${
+              className={`shrink-0 rounded-md overflow-hidden border-2 transition ${
                 i === idx ? 'border-blue-400' : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
@@ -101,9 +113,6 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
           ))}
         </div>
       )}
-
-      {/* Counter */}
-      <p className="absolute top-4 left-5 text-white/70 text-sm">{idx + 1} / {photos.length}</p>
     </div>
   )
 }
