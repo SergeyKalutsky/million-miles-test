@@ -5,8 +5,9 @@ import CarCard from '../components/CarCard'
 import Pagination from '../components/Pagination'
 import BrandMultiSelect from '../components/filters/BrandMultiSelect'
 import FacetSelect from '../components/filters/FacetSelect'
-import { useCars, useFacets, INIT_FILTERS } from '../hooks/useCars'
+import { useCars, useFacets } from '../hooks/useCars'
 import type { Filters } from '../hooks/useCars'
+import { useQueryState, INIT_QUERY } from '../hooks/useQueryState'
 
 function sanitizeYear(v: string): string {
   const n = parseInt(v, 10)
@@ -17,31 +18,21 @@ function sanitizePrice(v: string): string {
   return isNaN(n) || n < 0 ? '' : String(n)
 }
 
-interface Query {
-  filters: Filters
-  sort: string
-  page: number
-}
-
-const INIT_QUERY: Query = {
-  filters: INIT_FILTERS,
-  sort: 'created_at:desc',
-  page: 1,
-}
-
 export default function CarsPage() {
   const { username, logout } = useAuth()
-  // Single state object — filters, sort, and page always change atomically.
-  // There is never a render where e.g. page=2 but filters have already changed.
-  const [query, setQuery] = useState<Query>(INIT_QUERY)
-  // Raw text for the number inputs, debounced before being committed to query
-  const [inputValues, setInputValues] = useState({ year_min: '', year_max: '', price_max: '' })
+  const { query, setQuery } = useQueryState()
+  // Raw text for the number inputs, debounced before being committed to the URL
+  const [inputValues, setInputValues] = useState({
+    year_min:  query.filters.year_min,
+    year_max:  query.filters.year_max,
+    price_max: query.filters.price_max,
+  })
   const topRef = useRef<HTMLDivElement>(null)
 
   const facets = useFacets()
   const { data, loading, error } = useCars(query.filters, query.sort, query.page)
 
-  // Debounce number inputs — commit to query after 500 ms of no typing
+  // Debounce number inputs — commit to URL after 500 ms of no typing
   useEffect(() => {
     const t = setTimeout(() => {
       setQuery(q => ({
@@ -56,7 +47,7 @@ export default function CarsPage() {
       }))
     }, 500)
     return () => clearTimeout(t)
-  }, [inputValues])
+  }, [inputValues]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function setFilter<K extends keyof Filters>(k: K) {
     return (v: Filters[K]) =>
