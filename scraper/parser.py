@@ -11,7 +11,7 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field, asdict
-from typing import Optional
+from typing import Optional, Callable, Awaitable
 from urllib.parse import urljoin
 
 import requests
@@ -330,10 +330,13 @@ def scrape_detail(preview: ListingPreview) -> Optional[CarDetail]:
         return None
 
 
-def run_scraper(live: bool = True) -> list[CarDetail]:
+async def run_scraper(
+    live: bool = True,
+    known_ids: set[str] | None = None,
+    on_car_saved: Callable[[CarDetail], Awaitable[None]] | None = None,
+) -> list[CarDetail]:
     if not live:
         log.info("=== OFFLINE MODE ===")
-        # Look for sample files relative to scraper dir or project root
         import os
         base = os.path.dirname(os.path.abspath(__file__))
         outer = os.path.join(base, "..", "outer.html")
@@ -348,15 +351,26 @@ def run_scraper(live: bool = True) -> list[CarDetail]:
             )
         return [car]
 
+    known_ids = known_ids or set()
+
     log.info("=== PHASE 1: collect listing links ===")
     previews = collect_all_previews()
+
+    # Filter out cars we already have in the DB
+    new_previews = [p for p in previews if extract_id_from_url(p.detail_url) not in known_ids]
+    skipped = len(previews) - len(new_previews)
+    log.info("Skipping %d already-known cars. Scraping %d new ones.", skipped, len(new_previews))
+
     log.info("=== PHASE 2: scrape detail pages ===")
     results: list[CarDetail] = []
-    for i, preview in enumerate(previews, 1):
-        log.info("[%d/%d] %s", i, len(previews), preview.detail_url)
+    for i, preview in enumerate(new_previews, 1):
+        log.info("[%d/%d] %s", i, len(new_previews), preview.detail_url)
         car = scrape_detail(preview)
         if car:
             results.append(car)
+            if on_car_saved:
+                await on_car_saved(car)
         time.sleep(DELAY_BETWEEN_REQUESTS)
-    log.info("Done. Scraped %d / %d cars.", len(results), len(previews))
+
+    log.info("Done. Scraped %d / %d new cars.", len(results), len(new_previews))
     return results

@@ -34,7 +34,6 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 from app.models import Car  # noqa: E402  (after sys.path fixup)
-from app.database import Base  # noqa: E402
 
 from scraper.parser import CarDetail, run_scraper  # noqa: E402
 
@@ -42,30 +41,31 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
 
-async def upsert_car(session: AsyncSession, car: CarDetail) -> None:
-    data = asdict(car)
-    result = await session.execute(select(Car).where(Car.external_id == car.external_id))
-    existing = result.scalar_one_or_none()
-    if existing is None:
-        session.add(Car(**data))
-        log.info("  INSERT  %s  %s %s", car.external_id, car.brand, car.model)
-    else:
-        for k, v in data.items():
-            setattr(existing, k, v)
-        log.info("  UPDATE  %s  %s %s", car.external_id, car.brand, car.model)
+async def get_known_ids(session: AsyncSession) -> set[str]:
+    """Return the set of external_ids already stored in the DB."""
+    result = await session.execute(select(Car.external_id))
+    return {row[0] for row in result.fetchall()}
+
+
+async def insert_car(session: AsyncSession, car: CarDetail) -> None:
+    """Insert a brand-new car and commit immediately."""
+    session.add(Car(**asdict(car)))
+    await session.commit()
+    log.info("  SAVED  %s  %s %s", car.external_id, car.brand, car.model)
 
 
 async def main(live: bool) -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    cars = run_scraper(live=live)
-    log.info("Saving %d cars to DB …", len(cars))
+    async with AsyncSessionLocal() as session:
+        known_ids = await get_known_ids(session)
+    log.info("DB already contains %d cars — will skip those.", len(known_ids))
 
     async with AsyncSessionLocal() as session:
-        for car in cars:
-            await upsert_car(session, car)
-        await session.commit()
+
+        async def save_callback(car: CarDetail) -> None:
+            """Called by the scraper right after each detail page is parsed."""
+            await insert_car(session, car)
+
+        await run_scraper(live=live, known_ids=known_ids, on_car_saved=save_callback)
 
     log.info("Done.")
     await engine.dispose()
