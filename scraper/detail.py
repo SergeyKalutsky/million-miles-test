@@ -14,8 +14,10 @@ from bs4 import BeautifulSoup
 from scraper.models import CarDetail
 from scraper.normalizers import (
     normalize_year, normalize_mileage_km, normalize_price_jpy,
-    map_brand, map_model, map_transmission, map_fuel, map_body, map_color,
+    map_brand, map_transmission, map_fuel, map_body,
 )
+from scraper.model_resolver import resolve_model
+from scraper.color_resolver import resolve_color
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +104,7 @@ def parse_detail_page(url: str, html: str) -> CarDetail:
 
     brand_ja, model_ja = _extract_brand_model(product_json)
     brand = map_brand(brand_ja) if brand_ja else None
-    model = map_model(model_ja) if model_ja else None
+    model = resolve_model(model_ja) if model_ja else None
 
     color_raw = td_map.get("色") or product_json.get("color") or ""
 
@@ -117,7 +119,7 @@ def parse_detail_page(url: str, html: str) -> CarDetail:
         transmission=map_transmission(td_map["ミッション"]) if td_map.get("ミッション") else None,
         fuel_type=map_fuel(td_map["エンジン種別"]) if td_map.get("エンジン種別") else None,
         body_type=map_body(td_map["ボディタイプ"]) if td_map.get("ボディタイプ") else None,
-        color=map_color(str(color_raw)) if color_raw else None,
+        color=resolve_color(str(color_raw)) if color_raw else None,
         location=td_map.get("地域") or None,
         photos=_extract_photos(soup),
         raw_json=product_json or None,

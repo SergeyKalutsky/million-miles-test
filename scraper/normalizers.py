@@ -82,6 +82,9 @@ MODEL_MAP: dict[str, str] = {
     "クワトロ": "Quattro",
     # BMW
     "グランクーペ": "Gran Coupe", "グランツーリスモ": "Gran Turismo",
+    "2シリーズグランツアラー": "2 Series Gran Tourer",
+    "2シリーズアクティブツアラー": "2 Series Active Tourer",
+    "3シリーズツーリング": "3 Series Touring",
     # Ferrari
     "カリフォルニア": "California", "ポルトフィーノ": "Portofino",
     "ローマ": "Roma", "テスタロッサ": "Testarossa",
@@ -92,6 +95,13 @@ MODEL_MAP: dict[str, str] = {
     "グランツーリスモ": "GranTurismo", "レヴァンテ": "Levante",
     # Mercedes-Benz
     "マイバッハ": "Maybach",
+    "Cクラス": "C-Class", "Cクラスワゴン": "C-Class Wagon",
+    "Eクラス": "E-Class", "Aクラスセダン": "A-Class Sedan",
+    "Aクラス": "A-Class", "Bクラス": "B-Class",
+    "CLAクラス": "CLA-Class",
+    "A7スポーツバック": "A7 Sportback",
+    "A3スポーツバック": "A3 Sportback", "A3セダン": "A3 Sedan",
+    "A1スポーツバック": "A1 Sportback",
     # Porsche
     "カイエン": "Cayenne", "マカン": "Macan", "パナメーラ": "Panamera",
     "タイカン": "Taycan", "ボクスター": "Boxster", "ケイマン": "Cayman",
@@ -103,33 +113,78 @@ MODEL_MAP: dict[str, str] = {
     "ベンテイガ": "Bentayga", "ミュルザンヌ": "Mulsanne",
     # Toyota
     "プリウス": "Prius", "クラウン": "Crown", "カムリ": "Camry",
-    "ランドクルーザー": "Land Cruiser", "ハイエース": "Hiace", "アルファード": "Alphard",
+    "クラウンロイヤル": "Crown Royal",
+    "ランドクルーザー": "Land Cruiser", "ランドクルーザープラド": "Land Cruiser Prado",
+    "ハイエース": "Hiace", "ハイエースバン": "Hiace Van",
+    "アルファード": "Alphard",
     "ヴェルファイア": "Vellfire", "ハリアー": "Harrier", "ヴォクシー": "Voxy",
     "シエンタ": "Sienta", "ヤリス": "Yaris", "アクア": "Aqua",
     "ノア": "Noah", "エスティマ": "Estima", "セルシオ": "Celsior",
     "スープラ": "Supra", "86": "86", "GR86": "GR86",
+    "カローラツーリング": "Corolla Touring", "カローラクロス": "Corolla Cross",
+    "カローラフィールダー": "Corolla Fielder", "カローラアクシオ": "Corolla Axio",
+    "ヴィッツ": "Vitz", "ライズ": "Raize",
+    "スペイド": "Spade", "エスクァイア": "Esquire",
+    "プリウスα": "Prius α", "プリウスPHV": "Prius PHV",
+    "マークX": "Mark X",
     # Honda
     "フィット": "Fit", "シビック": "Civic", "アコード": "Accord",
     "ステップワゴン": "Step WGN", "フリード": "Freed", "ヴェゼル": "Vezel",
     "エヌボックス": "N-BOX", "オデッセイ": "Odyssey", "レジェンド": "Legend",
     # Nissan
     "スカイライン": "Skyline", "フェアレディＺ": "Fairlady Z", "フェアレディZ": "Fairlady Z",
-    "ノート": "Note", "セレナ": "Serena", "エクストレイル": "X-Trail",
+    "ノート": "Note", "ノートオーラ": "Note Aura",
+    "セレナ": "Serena", "エクストレイル": "X-Trail",
     "ジューク": "Juke", "キャラバン": "Caravan", "エルグランド": "Elgrand",
+    "ルークス": "Roox", "デイズ": "Dayz",
+    "NV200バネットバン": "NV200 Vanette Van",
+    "フーガ": "Fuga", "フーガハイブリッド": "Fuga Hybrid",
+    "ティアナ": "Teana", "リーフ": "Leaf",
+    # Lexus
+    "GSハイブリッド": "GS Hybrid",
     # Subaru
-    "インプレッサ": "Impreza", "レガシィ": "Legacy", "フォレスター": "Forester",
-    "アウトバック": "Outback", "レヴォーグ": "Levorg", "BRZ": "BRZ",
+    "インプレッサ": "Impreza", "インプレッサスポーツ": "Impreza Sport",
+    "インプレッサG4": "Impreza G4", "インプレッサハッチバック": "Impreza Hatchback",
+    "レガシィ": "Legacy", "フォレスター": "Forester",
+    "アウトバック": "Outback", "レヴォーグ": "Levorg",
+    "レヴォーグレイバック": "Levorg Layback", "BRZ": "BRZ",
+    "エクシーガクロスオーバー7": "Exiga Crossover 7",
     # Mazda
     "デミオ": "Demio", "アテンザ": "Atenza", "アクセラ": "Axela",
+    "アクセラスポーツ": "Axela Sport",
+    "MAZDA3ファストバック": "MAZDA3 Fastback", "MAZDA3セダン": "MAZDA3 Sedan",
     "ＣＸ－５": "CX-5", "CX-5": "CX-5", "ＣＸ－３": "CX-3", "ロードスター": "Roadster",
     # Mitsubishi
     "アウトランダー": "Outlander", "エクリプスクロス": "Eclipse Cross",
     "パジェロ": "Pajero", "デリカ": "Delica",
+    "デリカD：2": "Delica D:2", "デリカD:2": "Delica D:2", "デリカミニ": "Delica Mini",
+    "eKスペース": "eK Space", "eKワゴン": "eK Wagon",
+    "eKクロス": "eK Cross", "eKクロススペース": "eK Cross Space",
     # Suzuki
-    "ジムニー": "Jimny", "スイフト": "Swift", "ソリオ": "Solio",
-    "ハスラー": "Hustler", "アルト": "Alto", "ワゴンＲ": "Wagon R",
+    "ジムニー": "Jimny", "ジムニーノマド": "Jimny Nomad",
+    "スイフト": "Swift", "ソリオ": "Solio",
+    "ハスラー": "Hustler", "アルト": "Alto", "アルトラパン": "Alto Lapin",
+    "ワゴンＲ": "Wagon R", "ワゴンR": "Wagon R", "ワゴンRスマイル": "Wagon R Smile",
+    "スペーシア": "Spacia", "クロスビー": "Crossbe",
+    "イグニス": "Ignis", "エスクード": "Escudo",
     # Daihatsu
-    "ミラ": "Mira", "タント": "Tanto", "ムーヴ": "Move", "コペン": "Copen",
+    "ミラ": "Mira", "ミライース": "Mira e:S", "ミラトコット": "Mira Tocot",
+    "タント": "Tanto", "タフト": "Taft",
+    "ムーヴ": "Move", "ムーヴキャンバス": "Move Canbus",
+    "コペン": "Copen", "キャスト": "Cast",
+    "ピクシスメガ": "Pixis Mega",
+    # Jeep (via Chrysler/FCA group, sold in Japan)
+    "グランドチェロキー": "Grand Cherokee",
+    # Volkswagen
+    "ゴルフ": "Golf",
+    # Renault
+    "メガーヌ": "Mégane", "ラフェスタハイウェイスター": "LaFesta Highway Star",
+    # smart
+    "フォーフォー": "Forfour",
+    # MINI
+    "ミニクラブマン": "MINI Clubman",
+    # Honda (kei)
+    "エブリイワゴン": "Every Wagon",
 }
 
 COLOR_MAP: dict[str, str] = {
@@ -158,13 +213,29 @@ COLOR_MAP: dict[str, str] = {
     "パール": "Pearl White",
     "ミモザイエローパールメタリック": "Yellow Pearl",
     "ソニックシルバー": "Silver",
+    "ソニックチタニウム": "Sonic Titanium",
     "パールマイカ": "Pearl",
     "マスタードイエローマイカメタリック": "Mustard Yellow",
+    "マスタード": "Mustard",
     "ブリリアントホワイトパール": "Brilliant White Pearl",
+    "ブリリアントブロンズ・メタリック": "Brilliant Bronze Metallic",
     "アッシュ": "Ash Gray",
     "ムーンライトブルーパールメタリック": "Blue Pearl",
     "ダークグレーメタリック": "Dark Gray",
+    "ダークバイオレットマイカメタリック": "Dark Violet Mica Metallic",
     "プレミアムホワイトパールクリスタルシャイン": "Pearl White",
+    "スーパープラチナ・メタリック": "Super Platinum Metallic",
+    "プラチナクォーツメタリック": "Platinum Quartz Metallic",
+    "プレシャスメタル": "Precious Metal",
+    "テレーンカーキマイカメタリック": "Terrain Khaki Mica Metallic",
+    "シフォンアイボリーメタリック": "Chiffon Ivory Metallic",
+    "スティールブロンドメタリック": "Steel Blonde Metallic",
+    "オフビートカーキメタリック": "Off-Beat Khaki Metallic",
+    "ライトローズマイカメタリック": "Light Rose Mica Metallic",
+    "キュイーヴルソラール": "Cuivre Solaire",
+    "ガンメタリック": "Gun Metallic",
+    "レモンライム": "Lemon Lime",
+    "ビアンコ ガーラ": "Bianco Gala",
 }
 
 TRANSMISSION_MAP: dict[str, str] = {
