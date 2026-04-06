@@ -24,7 +24,7 @@ from scraper.config import DELAY_BETWEEN_REQUESTS
 from scraper.models import CarDetail, ListingPreview          # re-exported
 from scraper.listing import collect_all_previews, extract_id_from_url
 from scraper.detail import parse_detail_page
-from scraper.http import fetch
+from scraper.session import fetch
 
 log = logging.getLogger(__name__)
 

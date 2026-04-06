@@ -1,5 +1,8 @@
 """
 HTTP session and fetch helpers.
+
+Named 'session.py' (not 'http.py') to avoid shadowing the stdlib 'http' package,
+which urllib3 imports internally via 'from http.client import ...'.
 """
 
 from __future__ import annotations

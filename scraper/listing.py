@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 from scraper.config import BASE_URL, LISTING_URLS, DELAY_BETWEEN_REQUESTS
-from scraper.http import get_soup
+from scraper.session import get_soup
 from scraper.models import ListingPreview
 
 log = logging.getLogger(__name__)
