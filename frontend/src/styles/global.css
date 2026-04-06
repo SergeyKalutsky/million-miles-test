@@ -40,3 +40,14 @@ html, body, #root {
            dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:focus:border-blue-400;
   }
 }
+
+/* Hide number input spinners */
+.input-field[type="number"]::-webkit-inner-spin-button,
+.input-field[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-field[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
