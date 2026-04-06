@@ -38,28 +38,34 @@ services:
       db:
         condition: service_healthy
 
-  # ── 3. Scraper (one-shot job) ──────────────────────────────────────────────
+  # ── 3. Scraper (cron, every hour) ─────────────────────────────────────────
   scraper:
     build:
       context: .
       dockerfile: Dockerfile.scraper
+    restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SCRAPER_LIVE:  ${SCRAPER_LIVE:-0}
-    volumes:
-      # Mount HTML sample files so offline mode works without rebuilding
-      - .:/app
-    command: python run_scraper.py
     depends_on:
       db:
         condition: service_healthy
       api:
         condition: service_started
-    # Don't restart automatically — run once on demand:
-    #   docker compose run --rm scraper
     profiles:
       - scraper
+
+  # ── 4. React frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

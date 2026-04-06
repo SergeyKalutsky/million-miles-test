@@ -1,0 +1,2 @@
+# Run scraper every hour at minute 0
+0 * * * * cd /app && python scraper/run_scraper.py >> /var/log/scraper.log 2>&1

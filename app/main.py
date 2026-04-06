@@ -1,21 +1,43 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 
 from app.config import settings
-from app.database import Base, engine
+from app.database import AsyncSessionLocal, Base, engine
+from app.models import User
 from app.routers import auth, cars
+from app.security import hash_password
+
+log = logging.getLogger(__name__)
+
+
+async def _seed_admin() -> None:
+    """Create admin:admin123 if not present."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).where(User.username == "admin"))
+        if result.scalar_one_or_none() is None:
+            session.add(
+                User(
+                    username="admin",
+                    email="admin@million-miles.local",
+                    hashed_password=hash_password("admin123"),
+                    is_active=True,
+                )
+            )
+            await session.commit()
+            log.info("Admin user created (admin / admin123)")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create all tables on startup (dev convenience).
-    # In production use Alembic migrations instead.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await _seed_admin()
     yield
     await engine.dispose()
 
