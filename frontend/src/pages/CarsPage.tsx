@@ -17,59 +17,67 @@ function sanitizePrice(v: string): string {
   return isNaN(n) || n < 0 ? '' : String(n)
 }
 
+interface Query {
+  filters: Filters
+  sort: string
+  page: number
+}
+
+const INIT_QUERY: Query = {
+  filters: INIT_FILTERS,
+  sort: 'created_at:desc',
+  page: 1,
+}
+
 export default function CarsPage() {
   const { username, logout } = useAuth()
-  const [filters, setFilters] = useState<Filters>(INIT_FILTERS)
-  // Separate state for number inputs — displayed immediately, debounced into filters
+  // Single state object — filters, sort, and page always change atomically.
+  // There is never a render where e.g. page=2 but filters have already changed.
+  const [query, setQuery] = useState<Query>(INIT_QUERY)
+  // Raw text for the number inputs, debounced before being committed to query
   const [inputValues, setInputValues] = useState({ year_min: '', year_max: '', price_max: '' })
-  // Increment to skip the current debounce cycle (e.g. on clearAll)
-  const [resetKey, setResetKey] = useState(0)
-  const [sort, setSort] = useState('created_at:desc')
-  const [page, setPage] = useState(1)
   const topRef = useRef<HTMLDivElement>(null)
 
   const facets = useFacets()
-  const { data, loading, error } = useCars(filters, sort, page)
+  const { data, loading, error } = useCars(query.filters, query.sort, query.page)
 
-  // Debounce number inputs — only commit to filters after 500 ms of no typing
+  // Debounce number inputs — commit to query after 500 ms of no typing
   useEffect(() => {
     const t = setTimeout(() => {
-      setFilters(f => ({
-        ...f,
-        year_min:  sanitizeYear(inputValues.year_min),
-        year_max:  sanitizeYear(inputValues.year_max),
-        price_max: sanitizePrice(inputValues.price_max),
+      setQuery(q => ({
+        ...q,
+        page: 1,
+        filters: {
+          ...q.filters,
+          year_min:  sanitizeYear(inputValues.year_min),
+          year_max:  sanitizeYear(inputValues.year_max),
+          price_max: sanitizePrice(inputValues.price_max),
+        },
       }))
     }, 500)
     return () => clearTimeout(t)
-  // resetKey changes instantly cancel the debounce without committing stale values
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputValues, resetKey])
-
-  // Reset to page 1 whenever filters or sort change
-  useEffect(() => { setPage(1) }, [filters, sort])
+  }, [inputValues])
 
   function setFilter<K extends keyof Filters>(k: K) {
-    return (v: Filters[K]) => setFilters(f => ({ ...f, [k]: v }))
+    return (v: Filters[K]) =>
+      setQuery(q => ({ ...q, page: 1, filters: { ...q.filters, [k]: v } }))
   }
   function setInputEv(k: keyof typeof inputValues) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setInputValues(iv => ({ ...iv, [k]: e.target.value }))
   }
   function clearAll() {
-    setFilters(INIT_FILTERS)
+    setQuery(INIT_QUERY)
     setInputValues({ year_min: '', year_max: '', price_max: '' })
-    setResetKey(k => k + 1)
   }
-
   function handlePageChange(p: number) {
-    setPage(p)
+    setQuery(q => ({ ...q, page: p }))
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const hasFilters =
-    filters.brands.length > 0 ||
-    Object.entries(filters)
+    query.filters.brands.length > 0 ||
+    Object.entries(query.filters)
       .filter(([k]) => k !== 'brands')
       .some(([, v]) => Boolean(v)) ||
     Object.values(inputValues).some(Boolean)
@@ -98,11 +106,11 @@ export default function CarsPage() {
               </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              <BrandMultiSelect selected={filters.brands} options={facets.brands} onChange={setFilter('brands')} />
-              <FacetSelect placeholder="Body type…"    value={filters.body_type}    options={facets.body_types}    onChange={setFilter('body_type')} />
-              <FacetSelect placeholder="Fuel…"         value={filters.fuel_type}    options={facets.fuel_types}    onChange={setFilter('fuel_type')} />
-              <FacetSelect placeholder="Transmission…" value={filters.transmission} options={facets.transmissions} onChange={setFilter('transmission')} />
-              <FacetSelect placeholder="Color…"        value={filters.color}        options={facets.colors}        onChange={setFilter('color')} />
+              <BrandMultiSelect selected={query.filters.brands} options={facets.brands}         onChange={setFilter('brands')} />
+              <FacetSelect placeholder="Body type…"    value={query.filters.body_type}    options={facets.body_types}    onChange={setFilter('body_type')} />
+              <FacetSelect placeholder="Fuel…"         value={query.filters.fuel_type}    options={facets.fuel_types}    onChange={setFilter('fuel_type')} />
+              <FacetSelect placeholder="Transmission…" value={query.filters.transmission} options={facets.transmissions} onChange={setFilter('transmission')} />
+              <FacetSelect placeholder="Color…"        value={query.filters.color}        options={facets.colors}        onChange={setFilter('color')} />
               <input placeholder="Year from"     type="number" min={1950} max={2100} value={inputValues.year_min}  onChange={setInputEv('year_min')}  className="input-field" />
               <input placeholder="Year to"       type="number" min={1950} max={2100} value={inputValues.year_max}  onChange={setInputEv('year_max')}  className="input-field" />
               <input placeholder="Max price (¥)" type="number" min={0}              value={inputValues.price_max} onChange={setInputEv('price_max')} className="input-field" />
@@ -116,8 +124,8 @@ export default function CarsPage() {
             </p>
             <div className="relative">
               <select
-                value={sort}
-                onChange={e => setSort(e.target.value)}
+                value={query.sort}
+                onChange={e => setQuery(q => ({ ...q, sort: e.target.value, page: 1 }))}
                 className="input-field w-auto pl-3 pr-8 py-1.5 text-xs font-medium appearance-none cursor-pointer"
               >
                 <option value="created_at:desc">Newest first</option>
@@ -148,7 +156,7 @@ export default function CarsPage() {
             </div>
           )}
 
-          <Pagination page={page} totalPages={data?.pages ?? 0} onPageChange={handlePageChange} />
+          <Pagination page={query.page} totalPages={data?.pages ?? 0} onPageChange={handlePageChange} />
 
         </div>
       </div>

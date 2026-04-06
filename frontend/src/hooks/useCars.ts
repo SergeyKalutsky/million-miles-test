@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../api/client'
 import type { PaginatedCars } from '../api/types'
 
@@ -57,21 +57,21 @@ export function useCars(filters: Filters, sort: string, page: number) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const fetch = useCallback(async () => {
+  // Serialize all params to a single stable string — the effect only fires when
+  // the actual query changes, not on every render that produces a new object ref.
+  const qs = buildQueryString(filters, sort, page)
+
+  useEffect(() => {
+    let cancelled = false
     setLoading(true)
     setError('')
-    try {
-      const qs = buildQueryString(filters, sort, page)
-      const { data: res } = await api.get<PaginatedCars>(`/cars/?${qs}`)
-      setData(res)
-    } catch {
-      setError('Failed to load cars. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, sort, page])
-
-  useEffect(() => { fetch() }, [fetch])
+    api.get<PaginatedCars>(`/cars/?${qs}`)
+      .then(({ data: res }) => { if (!cancelled) setData(res) })
+      .catch(() => { if (!cancelled) setError('Failed to load cars. Please try again.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qs])
 
   return { data, loading, error }
 }
