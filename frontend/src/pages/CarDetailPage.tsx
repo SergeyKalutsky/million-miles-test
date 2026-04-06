@@ -34,10 +34,12 @@ interface LightboxProps {
 
 function Lightbox({ photos, initial, onClose }: LightboxProps) {
   const [idx, setIdx] = useState(initial)
+  const [loaded, setLoaded] = useState(false)
 
-  const prev = useCallback(() => setIdx(i => (i - 1 + photos.length) % photos.length), [photos.length])
-  const next = useCallback(() => setIdx(i => (i + 1) % photos.length), [photos.length])
+  const prev = useCallback(() => { setLoaded(false); setIdx(i => (i - 1 + photos.length) % photos.length) }, [photos.length])
+  const next = useCallback(() => { setLoaded(false); setIdx(i => (i + 1) % photos.length) }, [photos.length])
 
+  // Keyboard navigation
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'ArrowLeft')  prev()
@@ -48,64 +50,87 @@ function Lightbox({ photos, initial, onClose }: LightboxProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [prev, next, onClose])
 
+  // Preload only prev + next neighbors — not all images
+  useEffect(() => {
+    const neighbors = [
+      (idx - 1 + photos.length) % photos.length,
+      (idx + 1) % photos.length,
+    ]
+    neighbors.forEach(i => { const img = new Image(); img.src = photos[i] })
+  }, [idx, photos])
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center"
       onClick={onClose}
     >
-      {/* Main image — pointer-events-none so clicks fall through to overlay/buttons */}
+      {/* Spinner shown until image loads */}
+      {!loaded && (
+        <span className="absolute w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin pointer-events-none" />
+      )}
+
+      {/* Current image only — virtualized: only 1 img element in DOM */}
       <img
+        key={idx}
         src={photos[idx]}
         alt=""
-        className="max-h-[80vh] max-w-[80vw] sm:max-w-[90vw] object-contain rounded-lg shadow-2xl pointer-events-none select-none"
+        onLoad={() => setLoaded(true)}
+        className={`max-h-[80vh] max-w-[calc(100vw-7rem)] object-contain rounded-lg shadow-2xl pointer-events-none select-none transition-opacity duration-150 ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* Close — top-right, large tap target */}
+      {/* Close button */}
       <button
         onClick={e => { e.stopPropagation(); onClose() }}
         aria-label="Close"
-        className="absolute top-3 right-3 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 transition text-white text-xl leading-none"
-      >✕</button>
+        className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="w-5 h-5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
 
       {/* Counter */}
-      <p className="absolute top-4 left-4 z-10 text-white/70 text-sm tabular-nums">
+      <p className="absolute top-4 left-4 z-10 text-white/60 text-sm tabular-nums select-none">
         {idx + 1} / {photos.length}
       </p>
 
-      {/* Prev / Next — tall clickable strips on the sides */}
+      {/* Prev / Next — SVG chevron buttons */}
       {photos.length > 1 && (
         <>
           <button
             onClick={e => { e.stopPropagation(); prev() }}
             aria-label="Previous"
-            className="absolute left-0 top-0 h-full w-14 sm:w-20 z-10 flex items-center justify-center group"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
           >
-            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 group-hover:bg-black/70 transition text-white text-2xl leading-none select-none">
-              ‹
-            </span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
           </button>
           <button
             onClick={e => { e.stopPropagation(); next() }}
             aria-label="Next"
-            className="absolute right-0 top-0 h-full w-14 sm:w-20 z-10 flex items-center justify-center group"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 transition text-white"
           >
-            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 group-hover:bg-black/70 transition text-white text-2xl leading-none select-none">
-              ›
-            </span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
           </button>
         </>
       )}
 
-      {/* Thumbnail strip */}
+      {/* Thumbnail strip — lazy loaded, only visible ones */}
       {photos.length > 1 && (
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 overflow-x-auto max-w-[80vw] px-2 pb-1"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 overflow-x-auto max-w-[calc(100vw-6rem)] px-2 pb-1"
+          style={{ scrollbarWidth: 'none' }}
           onClick={e => e.stopPropagation()}
         >
           {photos.map((url, i) => (
-            <button key={i} onClick={() => setIdx(i)}
-              className={`shrink-0 rounded-md overflow-hidden border-2 transition ${
-                i === idx ? 'border-blue-400' : 'border-transparent opacity-60 hover:opacity-100'
+            <button
+              key={i}
+              onClick={() => { setLoaded(false); setIdx(i) }}
+              className={`shrink-0 rounded-md overflow-hidden border-2 transition-all ${
+                i === idx ? 'border-blue-400 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
               }`}
             >
               <img src={url} alt="" className="w-16 h-11 object-cover" loading="lazy" />
