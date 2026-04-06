@@ -210,6 +210,7 @@ export default function CarsPage() {
   const [filters, setFilters] = useState<Filters>(INIT_FILTERS)
   // Separate state for number inputs — updates immediately for display, debounced into filters
   const [inputValues, setInputValues] = useState({ year_min: '', year_max: '', price_max: '' })
+  const skipDebounce = useRef(false)
   const [sort, setSort] = useState('created_at:desc')
   const [page, setPage] = useState(1)
   const [data, setData] = useState<PaginatedCars | null>(null)
@@ -225,6 +226,10 @@ export default function CarsPage() {
 
   // Debounce number inputs — only commit to filters after 500 ms of no typing
   useEffect(() => {
+    if (skipDebounce.current) {
+      skipDebounce.current = false
+      return
+    }
     const t = setTimeout(() => {
       setFilters(f => ({
         ...f,
@@ -293,6 +298,7 @@ export default function CarsPage() {
       setInputValues(iv => ({ ...iv, [k]: e.target.value }))
   }
   function clearAll() {
+    skipDebounce.current = true
     setFilters(INIT_FILTERS)
     setInputValues({ year_min: '', year_max: '', price_max: '' })
   }
