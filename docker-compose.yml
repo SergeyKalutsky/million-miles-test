@@ -22,7 +22,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: app/Dockerfile
     restart: unless-stopped
     env_file: .env
     environment:
@@ -42,7 +42,7 @@ services:
   scraper:
     build:
       context: .
-      dockerfile: Dockerfile.scraper
+      dockerfile: scraper/Dockerfile
     restart: unless-stopped
     env_file: .env
     environment:
