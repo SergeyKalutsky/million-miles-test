@@ -35,7 +35,7 @@ async def list_cars(
     db: Annotated[AsyncSession, Depends(get_db)],
     _: CurrentUser,  # require auth
     # --- filters ---
-    brand: str | None = Query(None, description="Filter by brand (exact, case-insensitive)"),
+    brand: list[str] | None = Query(None, description="Filter by brand(s) — repeatable, case-insensitive"),
     model: str | None = Query(None, description="Filter by model (partial match)"),
     body_type: str | None = Query(None),
     fuel_type: str | None = Query(None),
@@ -64,7 +64,8 @@ async def list_cars(
 
     # --- apply filters ---
     if brand:
-        stmt = stmt.where(func.lower(Car.brand) == brand.lower())
+        lower_brands = [b.lower() for b in brand]
+        stmt = stmt.where(func.lower(Car.brand).in_(lower_brands))
     if model:
         stmt = stmt.where(Car.model.ilike(f"%{model}%"))
     if body_type:
@@ -107,6 +108,7 @@ async def list_cars(
         total=total,
         page=page,
         page_size=page_size,
+        pages=max(1, -(-total // page_size)),  # ceiling division
         items=[CarOut.model_validate(r) for r in rows],
     )
 
