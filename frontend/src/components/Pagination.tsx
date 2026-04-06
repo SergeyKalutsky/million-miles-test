@@ -27,7 +27,7 @@ const BTN_BASE =
   'px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm transition text-gray-700 dark:text-gray-300'
 
 export default function Pagination({ page, totalPages, onPageChange }: Props) {
-  if (totalPages <= 0) return null
+  if (totalPages <= 1) return null
 
   const pages = buildPageRange(page, totalPages)
 
