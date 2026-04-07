@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DOMAIN="million-miles-test.polyglotty.online"
-EMAIL="skalutsky@gmail.com" 
+EMAIL="skalutsky@gmail.com"
 
 set -e
 
@@ -24,7 +24,11 @@ echo "=== Starting frontend container ==="
 docker compose up -d frontend
 
 echo "=== Requesting real Let's Encrypt certificate ==="
-docker compose run --rm certbot certbot certonly \
+# Run certbot directly (not via docker compose run) to avoid container startup issues
+docker run --rm \
+    -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
+    -v "$(pwd)/certbot/www:/var/www/certbot" \
+    certbot/certbot certonly \
     --webroot \
     --webroot-path /var/www/certbot \
     --email "$EMAIL" \
@@ -32,8 +36,12 @@ docker compose run --rm certbot certbot certonly \
     --no-eff-email \
     -d "$DOMAIN"
 
-echo "=== Reloading nginx with the real certificate ==="
-docker compose exec frontend nginx -s reload
+echo "=== Restarting frontend so nginx picks up the real certificate ==="
+# Restart (not just reload) so the volume is re-mounted with the real cert
+docker compose restart frontend
+
+echo "=== Bringing up the full stack ==="
+docker compose up -d
 
 echo "=== Done! Certificate issued for $DOMAIN ==="
-echo "    Now run: docker compose up -d"
+echo "    Site: https://$DOMAIN"
