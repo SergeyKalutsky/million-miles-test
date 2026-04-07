@@ -43,5 +43,3 @@ if __name__ == "__main__":
             log.error("Scraper run failed: %s", exc, exc_info=True)
         log.info("=== Scraper run done. Next run in %ds ===", INTERVAL)
         time.sleep(INTERVAL)
-
-    asyncio.run(main(live=live))
