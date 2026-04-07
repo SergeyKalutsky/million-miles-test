@@ -41,7 +41,6 @@ def scrape_detail(preview: ListingPreview) -> Optional[CarDetail]:
 
 async def run_scraper(
     live: bool = True,
-    known_ids: set[str] | None = None,
     on_car_saved: Callable[[CarDetail], Awaitable[None]] | None = None,
 ) -> list[CarDetail]:
     if not live:
