@@ -50,7 +50,7 @@ flowchart TB
 
     %% Frontend
     subgraph FRONT["Frontend Layer"]
-        FE[React / NextJS App<br/>Auth UI / Cars List / Car Details]
+        FE[React / Auth UI / Cars List / Car Details]
         NGINX[Nginx / SSL Termination<br/>80 / 443]
         CERT[Certbot<br/>SSL renewal]
     end
