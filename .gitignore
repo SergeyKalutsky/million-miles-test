@@ -27,3 +27,9 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Let's Encrypt — real certs must never be committed
+certbot/conf/
+# but keep the webroot dir so nginx can serve challenges
+!certbot/www/
+!certbot/www/.gitkeep
