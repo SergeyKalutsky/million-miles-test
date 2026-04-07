@@ -41,31 +41,32 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
 
-async def get_known_ids(session: AsyncSession) -> set[str]:
-    """Return the set of external_ids already stored in the DB."""
-    result = await session.execute(select(Car.external_id))
-    return {row[0] for row in result.fetchall()}
+async def upsert_car(session: AsyncSession, car: CarDetail) -> None:
+    """Insert a new car or update mutable fields if it already exists."""
+    result = await session.execute(select(Car).where(Car.external_id == car.external_id))
+    existing = result.scalar_one_or_none()
 
+    data = asdict(car)
+    if existing is None:
+        session.add(Car(**data))
+        log.info("  INSERT  %s  %s %s", car.external_id, car.brand, car.model)
+    else:
+        # Update fields that can change between scraper runs
+        for field in ("price_jpy", "mileage_km", "photos", "location", "raw_json", "raw_text"):
+            setattr(existing, field, data.get(field))
+        log.info("  UPDATE  %s  %s %s", car.external_id, car.brand, car.model)
 
-async def insert_car(session: AsyncSession, car: CarDetail) -> None:
-    """Insert a brand-new car and commit immediately."""
-    session.add(Car(**asdict(car)))
     await session.commit()
-    log.info("  SAVED  %s  %s %s", car.external_id, car.brand, car.model)
 
 
 async def main(live: bool) -> None:
     async with AsyncSessionLocal() as session:
-        known_ids = await get_known_ids(session)
-    log.info("DB already contains %d cars — will skip those.", len(known_ids))
-
-    async with AsyncSessionLocal() as session:
 
         async def save_callback(car: CarDetail) -> None:
             """Called by the scraper right after each detail page is parsed."""
-            await insert_car(session, car)
+            await upsert_car(session, car)
 
-        await run_scraper(live=live, known_ids=known_ids, on_car_saved=save_callback)
+        await run_scraper(live=live, on_car_saved=save_callback)
 
     log.info("Done.")
     await engine.dispose()

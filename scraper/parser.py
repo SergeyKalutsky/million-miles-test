@@ -22,7 +22,7 @@ from typing import Callable, Awaitable, Optional
 
 from scraper.config import DELAY_BETWEEN_REQUESTS
 from scraper.models import CarDetail, ListingPreview          # re-exported
-from scraper.listing import collect_all_previews, extract_id_from_url
+from scraper.listing import collect_all_previews
 from scraper.detail import parse_detail_page
 from scraper.session import fetch
 
@@ -47,19 +47,14 @@ async def run_scraper(
     if not live:
         return _run_offline()
 
-    known_ids = known_ids or set()
-
     log.info("=== PHASE 1: collect listing links ===")
     previews = collect_all_previews()
-
-    new_previews = [p for p in previews if extract_id_from_url(p.detail_url) not in known_ids]
-    skipped = len(previews) - len(new_previews)
-    log.info("Skipping %d already-known cars. Scraping %d new ones.", skipped, len(new_previews))
+    log.info("Total listings to scrape: %d", len(previews))
 
     log.info("=== PHASE 2: scrape detail pages ===")
     results: list[CarDetail] = []
-    for i, preview in enumerate(new_previews, 1):
-        log.info("[%d/%d] %s", i, len(new_previews), preview.detail_url)
+    for i, preview in enumerate(previews, 1):
+        log.info("[%d/%d] %s", i, len(previews), preview.detail_url)
         car = scrape_detail(preview)
         if car:
             results.append(car)
@@ -67,7 +62,7 @@ async def run_scraper(
                 await on_car_saved(car)
         time.sleep(DELAY_BETWEEN_REQUESTS)
 
-    log.info("Done. Scraped %d / %d new cars.", len(results), len(new_previews))
+    log.info("Done. Scraped %d / %d cars.", len(results), len(previews))
     return results
 
 
